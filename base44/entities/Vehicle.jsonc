@@ -1,0 +1,41 @@
+{
+  "name": "Vehicle",
+  "type": "object",
+  "properties": {
+    "plate_number": {
+      "type": "string"
+    },
+    "vehicle_type_id": {
+      "type": "string",
+      "description": "FK to VehicleType"
+    },
+    "make": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "year": {
+      "type": "number"
+    },
+    "color": {
+      "type": "string"
+    },
+    "vin": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "maintenance"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "plate_number",
+    "vehicle_type_id"
+  ]
+}

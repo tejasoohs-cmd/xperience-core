@@ -1,0 +1,47 @@
+{
+  "name": "Affiliate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Affiliate/vendor company name"
+    },
+    "contact_person": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "address": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string",
+      "default": "UAE"
+    },
+    "default_rate": {
+      "type": "number"
+    },
+    "internal_notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

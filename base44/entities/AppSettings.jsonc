@@ -1,0 +1,76 @@
+{
+  "name": "AppSettings",
+  "type": "object",
+  "properties": {
+    "settings_key": {
+      "type": "string",
+      "description": "Unique key like 'main'"
+    },
+    "company_logo_url": {
+      "type": "string"
+    },
+    "company_name": {
+      "type": "string",
+      "default": "Xperience Tourism LLC"
+    },
+    "company_address": {
+      "type": "string"
+    },
+    "company_phone": {
+      "type": "string"
+    },
+    "company_email": {
+      "type": "string"
+    },
+    "company_tax_id": {
+      "type": "string"
+    },
+    "default_vat_percent": {
+      "type": "number",
+      "default": 5
+    },
+    "next_booking_number": {
+      "type": "number",
+      "default": 18100
+    },
+    "next_account_number": {
+      "type": "number",
+      "default": 50000
+    },
+    "next_invoice_counter": {
+      "type": "number",
+      "default": 1
+    },
+    "next_statement_counter": {
+      "type": "number",
+      "default": 1
+    },
+    "payment_terms_list": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "Due Upon Receipt",
+        "Net 15",
+        "Net 30"
+      ]
+    },
+    "service_types_list": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "Arrival",
+        "Departure",
+        "Point-to-Point",
+        "Hourly",
+        "Tour"
+      ]
+    }
+  },
+  "required": [
+    "settings_key"
+  ]
+}

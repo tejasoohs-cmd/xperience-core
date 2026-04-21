@@ -1,0 +1,28 @@
+{
+  "name": "VehicleType",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "Short code e.g. SDN, SUV, VAN"
+    },
+    "name": {
+      "type": "string",
+      "description": "Full name e.g. Sedan, SUV, Sprinter Van"
+    },
+    "passenger_capacity": {
+      "type": "number"
+    },
+    "luggage_capacity": {
+      "type": "number"
+    },
+    "color_code": {
+      "type": "string",
+      "description": "Hex color code for UI display"
+    }
+  },
+  "required": [
+    "code",
+    "name"
+  ]
+}

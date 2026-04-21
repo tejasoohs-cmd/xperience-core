@@ -1,0 +1,33 @@
+{
+  "name": "Company",
+  "type": "object",
+  "properties": {
+    "company_name": {
+      "type": "string",
+      "description": "Company name"
+    },
+    "billing_address": {
+      "type": "string",
+      "description": "Full billing address"
+    },
+    "tax_id": {
+      "type": "string",
+      "description": "Tax registration number / TRN"
+    },
+    "internal_notes": {
+      "type": "string",
+      "description": "Internal notes about this company"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "company_name"
+  ]
+}

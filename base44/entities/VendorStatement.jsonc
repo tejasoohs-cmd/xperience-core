@@ -1,0 +1,60 @@
+{
+  "name": "VendorStatement",
+  "type": "object",
+  "properties": {
+    "statement_number": {
+      "type": "string",
+      "description": "Auto VST-YYYY-001 format, editable counter"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "affiliate_id": {
+      "type": "string",
+      "description": "FK to Affiliate"
+    },
+    "booking_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of Booking IDs"
+    },
+    "total": {
+      "type": "number",
+      "default": 0
+    },
+    "paid_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "Pending",
+        "Partial",
+        "Paid"
+      ],
+      "default": "Pending"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "payment_reference": {
+      "type": "string"
+    },
+    "payment_method": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "statement_number",
+    "date",
+    "affiliate_id"
+  ]
+}

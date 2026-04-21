@@ -1,0 +1,225 @@
+{
+  "name": "Booking",
+  "type": "object",
+  "properties": {
+    "confirmation_number": {
+      "type": "number",
+      "description": "Auto-sequential from 18100"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "New",
+        "Confirmed",
+        "Completed",
+        "Cancelled",
+        "No-show"
+      ],
+      "default": "New"
+    },
+    "service_type": {
+      "type": "string",
+      "description": "Arrival/Departure/Point-to-Point/Hourly/Tour"
+    },
+    "pickup_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "pickup_time": {
+      "type": "string",
+      "description": "HH:MM format"
+    },
+    "pickup_location": {
+      "type": "string"
+    },
+    "stops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "dropoff_location": {
+      "type": "string"
+    },
+    "vehicle_type_id": {
+      "type": "string",
+      "description": "FK to VehicleType"
+    },
+    "passenger_count": {
+      "type": "number",
+      "default": 1
+    },
+    "luggage_count": {
+      "type": "number",
+      "default": 0
+    },
+    "primary_passenger_name": {
+      "type": "string"
+    },
+    "primary_passenger_phone": {
+      "type": "string"
+    },
+    "primary_passenger_email": {
+      "type": "string"
+    },
+    "additional_passengers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "account_id": {
+      "type": "string",
+      "description": "FK to Account \u2014 DROPDOWN ONLY"
+    },
+    "booker_name": {
+      "type": "string"
+    },
+    "po_client_ref": {
+      "type": "string"
+    },
+    "voucher_number": {
+      "type": "string"
+    },
+    "flight_number": {
+      "type": "string"
+    },
+    "flight_schedule_time": {
+      "type": "string"
+    },
+    "flight_actual_time": {
+      "type": "string"
+    },
+    "gar_out_time": {
+      "type": "string"
+    },
+    "gar_in_time": {
+      "type": "string"
+    },
+    "driver_source": {
+      "type": "string",
+      "enum": [
+        "InHouse",
+        "FarmOut"
+      ],
+      "default": "InHouse"
+    },
+    "driver_id": {
+      "type": "string",
+      "description": "FK to Driver (nullable)"
+    },
+    "vehicle_id": {
+      "type": "string",
+      "description": "FK to Vehicle (nullable)"
+    },
+    "affiliate_id": {
+      "type": "string",
+      "description": "FK to Affiliate (nullable)"
+    },
+    "currency": {
+      "type": "string",
+      "default": "AED"
+    },
+    "client_base_rate": {
+      "type": "number",
+      "default": 0
+    },
+    "client_extras": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "client_vat_percent": {
+      "type": "number",
+      "default": 5
+    },
+    "client_total": {
+      "type": "number",
+      "default": 0,
+      "description": "Auto-calculated"
+    },
+    "vendor_base_rate": {
+      "type": "number",
+      "default": 0
+    },
+    "vendor_extras": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "vendor_vat_percent": {
+      "type": "number",
+      "default": 5
+    },
+    "vendor_total": {
+      "type": "number",
+      "default": 0,
+      "description": "Auto-calculated"
+    },
+    "profit": {
+      "type": "number",
+      "default": 0,
+      "description": "Auto: client_total - vendor_total"
+    },
+    "trip_notes": {
+      "type": "string"
+    },
+    "dispatch_notes": {
+      "type": "string"
+    },
+    "partner_notes": {
+      "type": "string"
+    },
+    "greeting_sign": {
+      "type": "string"
+    },
+    "invoice_id": {
+      "type": "string",
+      "description": "FK to Invoice (nullable)"
+    },
+    "statement_id": {
+      "type": "string",
+      "description": "FK to VendorStatement (nullable)"
+    },
+    "round_trip_parent_id": {
+      "type": "string",
+      "description": "Links round-trip booking pairs (nullable)"
+    }
+  },
+  "required": [
+    "confirmation_number",
+    "pickup_date",
+    "pickup_time",
+    "pickup_location",
+    "dropoff_location",
+    "account_id",
+    "client_base_rate",
+    "status"
+  ]
+}

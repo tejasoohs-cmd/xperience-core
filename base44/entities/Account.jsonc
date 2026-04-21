@@ -1,0 +1,76 @@
+{
+  "name": "Account",
+  "type": "object",
+  "properties": {
+    "account_number": {
+      "type": "number",
+      "description": "Sequential account number starting from 50000"
+    },
+    "company_id": {
+      "type": "string",
+      "description": "FK to Company entity"
+    },
+    "contact_name": {
+      "type": "string",
+      "description": "Primary contact name"
+    },
+    "job_title": {
+      "type": "string"
+    },
+    "department": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "cell_phone": {
+      "type": "string"
+    },
+    "vat_percent": {
+      "type": "number",
+      "default": 5,
+      "description": "VAT percentage for this account"
+    },
+    "payment_terms": {
+      "type": "string",
+      "default": "Due Upon Receipt",
+      "description": "Payment terms"
+    },
+    "stored_addresses": {
+      "type": "array",
+      "description": "Saved addresses for quick selection",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "stored_flat_rate": {
+      "type": "number",
+      "description": "Optional flat rate for this account"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "account_number",
+    "company_id",
+    "contact_name"
+  ]
+}
