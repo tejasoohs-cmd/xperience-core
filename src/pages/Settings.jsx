@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import PageHeader from '@/components/ui/PageHeader';
 import { useAppSettings } from '@/lib/useAppSettings';
+import { Textarea } from '@/components/ui/textarea';
 import { Save, Upload, Plus, Trash2, Download } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -115,15 +116,25 @@ export default function Settings() {
 
         {/* Defaults */}
         <section>
-          <h3 className="text-lg font-serif italic text-foreground mb-4 pb-2 border-b border-border">Defaults & Counters</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div><Label className="text-xs text-muted-foreground">Default VAT %</Label><Input type="number" value={form.default_vat_percent ?? 5} onChange={e => set('default_vat_percent', parseFloat(e.target.value) || 0)} className="bg-secondary border-border font-mono" /></div>
+          <h3 className="text-lg font-serif italic text-foreground mb-4 pb-2 border-b border-border">Invoice Settings</h3>
+          <div className="space-y-4">
+            <div><Label className="text-xs text-muted-foreground">Bank Details (appears on invoice footer)</Label><Textarea value={form.bank_details || ''} onChange={e => set('bank_details', e.target.value)} className="bg-secondary border-border h-24" placeholder="Bank name, IBAN, account number..." /></div>
+            <div><Label className="text-xs text-muted-foreground">Invoice Footer Notes</Label><Textarea value={form.invoice_footer_notes || ''} onChange={e => set('invoice_footer_notes', e.target.value)} className="bg-secondary border-border h-16" placeholder="Thank you for your business..." /></div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+        </section>
+
+        <section>
+          <h3 className="text-lg font-serif italic text-foreground mb-4 pb-2 border-b border-border">Defaults & Counters</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div><Label className="text-xs text-muted-foreground">Default VAT %</Label><Input type="number" value={form.default_vat_percent ?? 5} onChange={e => set('default_vat_percent', parseFloat(e.target.value) || 0)} className="bg-secondary border-border font-mono" /></div>
+            <div><Label className="text-xs text-muted-foreground">Default Quote Expiry (days)</Label><Input type="number" value={form.default_quote_expiry_days ?? 30} onChange={e => set('default_quote_expiry_days', parseInt(e.target.value) || 30)} className="bg-secondary border-border font-mono" /></div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4">
             <div><Label className="text-xs text-muted-foreground">Next Booking #</Label><Input type="number" value={form.next_booking_number ?? 18100} onChange={e => set('next_booking_number', parseInt(e.target.value) || 0)} className="bg-secondary border-border font-mono" /></div>
             <div><Label className="text-xs text-muted-foreground">Next Account #</Label><Input type="number" value={form.next_account_number ?? 50000} onChange={e => set('next_account_number', parseInt(e.target.value) || 0)} className="bg-secondary border-border font-mono" /></div>
             <div><Label className="text-xs text-muted-foreground">Next Invoice Counter</Label><Input type="number" value={form.next_invoice_counter ?? 1} onChange={e => set('next_invoice_counter', parseInt(e.target.value) || 0)} className="bg-secondary border-border font-mono" /></div>
             <div><Label className="text-xs text-muted-foreground">Next Statement Counter</Label><Input type="number" value={form.next_statement_counter ?? 1} onChange={e => set('next_statement_counter', parseInt(e.target.value) || 0)} className="bg-secondary border-border font-mono" /></div>
+            <div><Label className="text-xs text-muted-foreground">Next Quote Counter</Label><Input type="number" value={form.next_quote_counter ?? 1} onChange={e => set('next_quote_counter', parseInt(e.target.value) || 0)} className="bg-secondary border-border font-mono" /></div>
           </div>
         </section>
 

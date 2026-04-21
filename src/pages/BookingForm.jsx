@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/ui/PageHeader';
 import BookingFormFields from '@/components/booking/BookingFormFields';
 import PricingSummary from '@/components/booking/PricingSummary';
+import BookingParser from '@/components/booking/BookingParser';
 import { useAppSettings } from '@/lib/useAppSettings';
 import { calcBookingTotals, formatConfNumber } from '@/lib/formatters';
+import { logActivity } from '@/lib/activityLog';
 import { Save, Copy, ArrowLeftRight, Trash2, ArrowLeft } from 'lucide-react';
 
 export default function BookingForm() {
@@ -43,7 +45,21 @@ export default function BookingForm() {
     }
   }, [existing, isNew]);
 
+  // Pre-populate vat from account settings
+  useEffect(() => {
+    if (isNew && form.account_id) {
+      const acc = accounts.find(a => a.id === form.account_id);
+      if (acc?.vat_percent !== undefined) {
+        setForm(prev => ({ ...prev, client_vat_percent: acc.vat_percent }));
+      }
+    }
+  }, [form.account_id, accounts, isNew]);
+
   const isLocked = !isNew && (form.invoice_id || form.statement_id);
+
+  const handleParserApply = (parsedData) => {
+    setForm(prev => ({ ...prev, ...parsedData }));
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -58,14 +74,23 @@ export default function BookingForm() {
     if (isNew) {
       const confNum = await getNextBookingNumber();
       data.confirmation_number = confNum;
-      await base44.entities.Booking.create(data);
+      const created = await base44.entities.Booking.create(data);
+      await logActivity({ action_type: 'created', entity_type: 'booking', entity_id: created.id, entity_label: formatConfNumber(confNum), message: `Booking ${formatConfNumber(confNum)} created` });
     } else {
+      const prevStatus = existing?.[0]?.status;
       const { id: _id, created_date, updated_date, created_by, ...updateData } = data;
       await base44.entities.Booking.update(id, updateData);
+      const label = formatConfNumber(form.confirmation_number);
+      if (prevStatus && prevStatus !== form.status) {
+        await logActivity({ action_type: 'status_changed', entity_type: 'booking', entity_id: id, entity_label: label, message: `${label} status changed from ${prevStatus} to ${form.status}` });
+      } else {
+        await logActivity({ action_type: 'updated', entity_type: 'booking', entity_id: id, entity_label: label, message: `${label} updated` });
+      }
     }
 
     queryClient.invalidateQueries({ queryKey: ['bookings'] });
     queryClient.invalidateQueries({ queryKey: ['booking', id] });
+    queryClient.invalidateQueries({ queryKey: ['activityLog'] });
     setSaving(false);
     navigate('/bookings');
   };
@@ -75,12 +100,14 @@ export default function BookingForm() {
     const confNum = await getNextBookingNumber();
     const totals = calcBookingTotals(form);
     const { id: _id, created_date, updated_date, created_by, invoice_id, statement_id, ...dup } = form;
-    await base44.entities.Booking.create({
+    const created = await base44.entities.Booking.create({
       ...dup, confirmation_number: confNum, status: 'New',
       invoice_id: null, statement_id: null,
       client_total: totals.clientTotal, vendor_total: totals.vendorTotal, profit: totals.profit,
     });
+    await logActivity({ action_type: 'duplicated', entity_type: 'booking', entity_id: created.id, entity_label: formatConfNumber(confNum), message: `Booking ${formatConfNumber(confNum)} duplicated from ${formatConfNumber(form.confirmation_number)}` });
     queryClient.invalidateQueries({ queryKey: ['bookings'] });
+    queryClient.invalidateQueries({ queryKey: ['activityLog'] });
     setSaving(false);
     navigate('/bookings');
   };
@@ -90,7 +117,7 @@ export default function BookingForm() {
     const confNum = await getNextBookingNumber();
     const totals = calcBookingTotals(form);
     const { id: _id, created_date, updated_date, created_by, invoice_id, statement_id, ...dup } = form;
-    await base44.entities.Booking.create({
+    const created = await base44.entities.Booking.create({
       ...dup,
       confirmation_number: confNum, status: 'New',
       pickup_location: form.dropoff_location, dropoff_location: form.pickup_location,
@@ -99,12 +126,18 @@ export default function BookingForm() {
       invoice_id: null, statement_id: null,
       client_total: totals.clientTotal, vendor_total: totals.vendorTotal, profit: totals.profit,
     });
+    await logActivity({ action_type: 'created', entity_type: 'booking', entity_id: created.id, entity_label: formatConfNumber(confNum), message: `Round-trip ${formatConfNumber(confNum)} created from ${formatConfNumber(form.confirmation_number)}` });
     queryClient.invalidateQueries({ queryKey: ['bookings'] });
+    queryClient.invalidateQueries({ queryKey: ['activityLog'] });
     setSaving(false);
     navigate('/bookings');
   };
 
   const handleDelete = async () => {
+    if (form.invoice_id || form.statement_id) {
+      alert('Cannot delete: this booking is linked to an invoice or statement.');
+      return;
+    }
     if (!confirm('Delete this booking?')) return;
     await base44.entities.Booking.delete(id);
     queryClient.invalidateQueries({ queryKey: ['bookings'] });
@@ -140,6 +173,22 @@ export default function BookingForm() {
           </div>
         }
       />
+
+      {/* AI Parser — top of form */}
+      <div className="mb-4 p-4 bg-primary/5 border border-primary/20 rounded-lg flex items-center gap-3">
+        <div className="flex-1">
+          <p className="text-sm font-medium text-foreground">Smart Booking Parser</p>
+          <p className="text-xs text-muted-foreground">Paste a WhatsApp message or email and let AI extract the booking details</p>
+        </div>
+        <BookingParser
+          onApply={handleParserApply}
+          accounts={accounts}
+          companies={companies}
+          affiliates={affiliates}
+          vehicleTypes={vehicleTypes}
+          serviceTypes={settings.service_types_list}
+        />
+      </div>
 
       <PricingSummary form={form} />
 

@@ -1,0 +1,33 @@
+{
+  "name": "ActivityLog",
+  "type": "object",
+  "properties": {
+    "action_type": {
+      "type": "string",
+      "description": "e.g. created, updated, status_changed, payment_updated"
+    },
+    "entity_type": {
+      "type": "string",
+      "description": "booking, invoice, statement, quote, account, affiliate"
+    },
+    "entity_id": {
+      "type": "string"
+    },
+    "entity_label": {
+      "type": "string",
+      "description": "Human-readable label like XT-18100 or INV-2026-001"
+    },
+    "message": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "action_type",
+    "entity_type",
+    "entity_id",
+    "message"
+  ]
+}

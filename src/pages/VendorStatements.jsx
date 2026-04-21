@@ -8,8 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import PageHeader from '@/components/ui/PageHeader';
 import StatusPill from '@/components/ui/StatusPill';
 import { formatCurrency, formatDate, formatConfNumber, calcBookingTotals } from '@/lib/formatters';
+import { exportStatementsToCsv } from '@/lib/excelExport';
 import { useAppSettings } from '@/lib/useAppSettings';
-import { FileText } from 'lucide-react';
+import { FileText, Download } from 'lucide-react';
 
 export default function VendorStatements() {
   const navigate = useNavigate();
@@ -71,7 +72,15 @@ export default function VendorStatements() {
 
   return (
     <div>
-      <PageHeader title="Vendor Statements" subtitle={`${statements.length} statements`} />
+      <PageHeader
+        title="Vendor Statements"
+        subtitle={`${statements.length} statements`}
+        actions={
+          <Button variant="outline" onClick={() => exportStatementsToCsv(statements, affiliateMap)}>
+            <Download className="w-4 h-4 mr-1" /> Export
+          </Button>
+        }
+      />
 
       {Object.keys(readyBookings).length > 0 && (
         <div className="mb-8">

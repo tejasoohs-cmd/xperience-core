@@ -1,0 +1,62 @@
+{
+  "name": "StoredAddress",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Display name e.g. DXB Terminal 1, Grand Hyatt Dubai"
+    },
+    "account_id": {
+      "type": "string",
+      "description": "FK to Account \u2014 null means global"
+    },
+    "location_type": {
+      "type": "string",
+      "enum": [
+        "Address",
+        "Airport",
+        "Seaport",
+        "FBO",
+        "POI"
+      ],
+      "default": "Address"
+    },
+    "street_1": {
+      "type": "string"
+    },
+    "street_2": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string",
+      "default": "Dubai"
+    },
+    "state_province": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string",
+      "default": "UAE"
+    },
+    "zip_postal": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

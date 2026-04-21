@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import PageHeader from '@/components/ui/PageHeader';
 import StatusPill from '@/components/ui/StatusPill';
 import { formatConfNumber, formatDate, formatCurrency } from '@/lib/formatters';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Download } from 'lucide-react';
+import { exportBookingsToCsv } from '@/lib/excelExport';
 
 export default function BookingsList() {
   const [searchParams] = useSearchParams();
@@ -55,11 +56,16 @@ export default function BookingsList() {
         title="Bookings"
         subtitle={`${filtered.length} trips`}
         actions={
-          <Link to="/bookings/new">
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <Plus className="w-4 h-4 mr-2" /> New Booking
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => exportBookingsToCsv(filtered, Object.fromEntries(accounts.map(a=>[a.id,a])), Object.fromEntries(companies.map(c=>[c.id,c])), {})}>
+              <Download className="w-4 h-4 mr-1" /> Export
             </Button>
-          </Link>
+            <Link to="/bookings/new">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Plus className="w-4 h-4 mr-2" /> New Booking
+              </Button>
+            </Link>
+          </div>
         }
       />
 

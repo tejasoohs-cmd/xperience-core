@@ -9,11 +9,15 @@ const DEFAULT_SETTINGS = {
   company_email: '',
   company_tax_id: '',
   company_logo_url: '',
+  bank_details: '',
+  invoice_footer_notes: '',
   default_vat_percent: 5,
+  default_quote_expiry_days: 30,
   next_booking_number: 18100,
   next_account_number: 50000,
   next_invoice_counter: 1,
   next_statement_counter: 1,
+  next_quote_counter: 1,
   payment_terms_list: ['Due Upon Receipt', 'Net 15', 'Net 30'],
   service_types_list: ['Arrival', 'Departure', 'Point-to-Point', 'Hourly', 'Tour'],
 };
@@ -67,6 +71,13 @@ export function useAppSettings() {
     return `VST-${year}-${String(current).padStart(3, '0')}`;
   };
 
+  const getNextQuoteNumber = async () => {
+    const current = settings.next_quote_counter || 1;
+    const year = new Date().getFullYear();
+    await updateSettings.mutateAsync({ next_quote_counter: current + 1 });
+    return `Q-${year}-${String(current).padStart(3, '0')}`;
+  };
+
   return {
     settings,
     settingsId,
@@ -76,5 +87,6 @@ export function useAppSettings() {
     getNextAccountNumber,
     getNextInvoiceNumber,
     getNextStatementNumber,
+    getNextQuoteNumber,
   };
 }

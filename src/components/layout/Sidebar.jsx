@@ -13,12 +13,16 @@ import {
   Settings,
   X,
   LogOut,
+  FileQuestion,
+  BarChart3,
+  MapPin,
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
   { label: 'Bookings', path: '/bookings', icon: CalendarCheck },
+  { label: 'Quotes', path: '/quotes', icon: FileQuestion },
   { label: 'Invoices', path: '/invoices', icon: FileText },
   { label: 'Statements', path: '/statements', icon: Receipt },
   { type: 'divider' },
@@ -28,7 +32,9 @@ const NAV_ITEMS = [
   { label: 'Drivers', path: '/drivers', icon: CarFront },
   { label: 'Vehicle Types', path: '/vehicle-types', icon: Car },
   { label: 'Fleet', path: '/fleet', icon: Car },
+  { label: 'Addresses', path: '/addresses', icon: MapPin },
   { type: 'divider' },
+  { label: 'VAT Report', path: '/reports/vat', icon: BarChart3 },
   { label: 'Settings', path: '/settings', icon: Settings },
 ];
 
@@ -37,7 +43,6 @@ export default function Sidebar({ open, onClose }) {
 
   return (
     <>
-      {/* Mobile overlay */}
       {open && (
         <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={onClose} />
       )}

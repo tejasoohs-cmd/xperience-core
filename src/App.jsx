@@ -21,6 +21,10 @@ import Drivers from '@/pages/Drivers';
 import VehicleTypes from '@/pages/VehicleTypes';
 import Fleet from '@/pages/Fleet';
 import Settings from '@/pages/Settings';
+import Quotes from '@/pages/Quotes';
+import QuoteForm from '@/pages/QuoteForm';
+import VatReport from '@/pages/VatReport';
+import StoredAddresses from '@/pages/StoredAddresses';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -52,6 +56,9 @@ const AuthenticatedApp = () => {
         <Route path="/bookings" element={<BookingsList />} />
         <Route path="/bookings/new" element={<BookingForm />} />
         <Route path="/bookings/:id" element={<BookingForm />} />
+        <Route path="/quotes" element={<Quotes />} />
+        <Route path="/quotes/new" element={<QuoteForm />} />
+        <Route path="/quotes/:id" element={<QuoteForm />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/invoices/:id" element={<InvoiceView />} />
         <Route path="/statements" element={<VendorStatements />} />
@@ -62,6 +69,8 @@ const AuthenticatedApp = () => {
         <Route path="/drivers" element={<Drivers />} />
         <Route path="/vehicle-types" element={<VehicleTypes />} />
         <Route path="/fleet" element={<Fleet />} />
+        <Route path="/reports/vat" element={<VatReport />} />
+        <Route path="/addresses" element={<StoredAddresses />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>

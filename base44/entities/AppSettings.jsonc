@@ -4,10 +4,7 @@
   "properties": {
     "settings_key": {
       "type": "string",
-      "description": "Unique key like 'main'"
-    },
-    "company_logo_url": {
-      "type": "string"
+      "description": "Unique key \u2014 always 'main'"
     },
     "company_name": {
       "type": "string",
@@ -25,9 +22,23 @@
     "company_tax_id": {
       "type": "string"
     },
+    "company_logo_url": {
+      "type": "string"
+    },
+    "bank_details": {
+      "type": "string",
+      "description": "Bank details for invoice footer"
+    },
+    "invoice_footer_notes": {
+      "type": "string"
+    },
     "default_vat_percent": {
       "type": "number",
       "default": 5
+    },
+    "default_quote_expiry_days": {
+      "type": "number",
+      "default": 30
     },
     "next_booking_number": {
       "type": "number",
@@ -45,29 +56,21 @@
       "type": "number",
       "default": 1
     },
+    "next_quote_counter": {
+      "type": "number",
+      "default": 1
+    },
     "payment_terms_list": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "default": [
-        "Due Upon Receipt",
-        "Net 15",
-        "Net 30"
-      ]
+      }
     },
     "service_types_list": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "default": [
-        "Arrival",
-        "Departure",
-        "Point-to-Point",
-        "Hourly",
-        "Tour"
-      ]
+      }
     }
   },
   "required": [

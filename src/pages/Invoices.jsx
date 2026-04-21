@@ -7,9 +7,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import PageHeader from '@/components/ui/PageHeader';
 import StatusPill from '@/components/ui/StatusPill';
-import { formatCurrency, formatDate, formatConfNumber, calcBookingTotals } from '@/lib/formatters';
+import { formatCurrency, formatDate, formatConfNumber, calcBookingTotals, getDaysOverdue } from '@/lib/formatters';
+import { exportInvoicesToCsv } from '@/lib/excelExport';
 import { useAppSettings } from '@/lib/useAppSettings';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, Download } from 'lucide-react';
 
 export default function Invoices() {
   const navigate = useNavigate();
@@ -95,7 +96,15 @@ export default function Invoices() {
 
   return (
     <div>
-      <PageHeader title="Invoices" subtitle={`${invoices.length} invoices`} />
+      <PageHeader
+        title="Invoices"
+        subtitle={`${invoices.length} invoices`}
+        actions={
+          <Button variant="outline" onClick={() => exportInvoicesToCsv(invoices, accountMap, companyMap)}>
+            <Download className="w-4 h-4 mr-1" /> Export
+          </Button>
+        }
+      />
 
       {/* Ready to Invoice */}
       {Object.keys(readyBookings).length > 0 && (
@@ -137,7 +146,14 @@ export default function Invoices() {
                 <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{getClientName(inv.account_id)}</td>
                 <td className="px-4 py-3 text-right font-mono text-foreground">{formatCurrency(inv.grand_total)}</td>
                 <td className="px-4 py-3 text-right font-mono text-muted-foreground hidden md:table-cell">{formatCurrency(inv.paid_amount)}</td>
-                <td className="px-4 py-3"><StatusPill status={inv.payment_status} size="xs" /></td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <StatusPill status={inv.payment_status} size="xs" />
+                    {inv.payment_status !== 'Paid' && getDaysOverdue(inv.due_date) > 0 && (
+                      <span className="text-[10px] font-mono bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full">{getDaysOverdue(inv.due_date)}d overdue</span>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
             {invoices.length === 0 && (
