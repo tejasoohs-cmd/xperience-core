@@ -87,7 +87,7 @@ export default function InvoiceView() {
         actions={
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => navigate('/invoices')}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
-            <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="w-4 h-4 mr-1" /> Print</Button>
+            <Button variant="outline" size="sm" onClick={() => window.open(`/print/invoice/${id}`, '_blank')}><Printer className="w-4 h-4 mr-1" /> Print Invoice</Button>
             <Button variant="outline" size="sm" onClick={handleDelete} className="text-destructive"><Trash2 className="w-4 h-4 mr-1" /> Delete</Button>
           </div>
         }

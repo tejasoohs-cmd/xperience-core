@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   CalendarCheck,
+  Calendar,
   FileText,
   Receipt,
   Building2,
@@ -16,11 +17,14 @@ import {
   FileQuestion,
   BarChart3,
   MapPin,
+  Radio,
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
+  { label: 'Dispatch', path: '/dispatch', icon: Radio },
+  { label: 'Calendar', path: '/calendar', icon: Calendar },
   { label: 'Bookings', path: '/bookings', icon: CalendarCheck },
   { label: 'Quotes', path: '/quotes', icon: FileQuestion },
   { label: 'Invoices', path: '/invoices', icon: FileText },

@@ -1,11 +1,15 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Printer, ChevronDown, User, Truck, FileText, Users } from 'lucide-react';
+import { Printer, ChevronDown, User, Truck, FileText, Users, XCircle } from 'lucide-react';
 
-export default function PrintMenu({ booking, setPrintMode }) {
+export default function PrintMenu({ booking }) {
   const isFarmOut = booking?.driver_source === 'FarmOut';
+  const isCancelled = booking?.status === 'Cancelled';
   const hasInvoice = !!booking?.invoice_id;
+  const id = booking?.id;
+
+  const open = (path) => window.open(path, '_blank');
 
   return (
     <DropdownMenu>
@@ -15,26 +19,34 @@ export default function PrintMenu({ booking, setPrintMode }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-card border-border">
-        <DropdownMenuItem onClick={() => setPrintMode('receipt')} className="cursor-pointer">
+        <DropdownMenuItem onClick={() => open(`/print/reservation-receipt/${id}`)} className="cursor-pointer">
           <FileText className="w-4 h-4 mr-2 text-muted-foreground" /> Reservation Receipt
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setPrintMode('customer')} className="cursor-pointer">
+        <DropdownMenuItem onClick={() => open(`/print/customer-trip-sheet/${id}`)} className="cursor-pointer">
           <Users className="w-4 h-4 mr-2 text-muted-foreground" /> Customer Trip Sheet
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => open(`/print/driver-trip-sheet/${id}`)} className="cursor-pointer">
+          <User className="w-4 h-4 mr-2 text-muted-foreground" /> Driver Trip Sheet
+        </DropdownMenuItem>
         {isFarmOut && (
-          <DropdownMenuItem onClick={() => setPrintMode('affiliate')} className="cursor-pointer">
+          <DropdownMenuItem onClick={() => open(`/print/affiliate-trip-sheet/${id}`)} className="cursor-pointer">
             <Truck className="w-4 h-4 mr-2 text-muted-foreground" /> Affiliate Trip Sheet
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem onClick={() => setPrintMode('driver')} className="cursor-pointer">
-          <User className="w-4 h-4 mr-2 text-muted-foreground" /> Driver Trip Sheet
-        </DropdownMenuItem>
+        {isCancelled && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => open(`/print/cancellation-confirmation/${id}`)} className="cursor-pointer text-red-400">
+              <XCircle className="w-4 h-4 mr-2" /> Cancellation Confirmation
+            </DropdownMenuItem>
+          </>
+        )}
         {hasInvoice && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => window.open(`/invoices/${booking.invoice_id}`, '_blank')} className="cursor-pointer">
-              <FileText className="w-4 h-4 mr-2 text-muted-foreground" /> Open Invoice
+            <DropdownMenuItem onClick={() => open(`/print/invoice/${booking.invoice_id}`)} className="cursor-pointer">
+              <FileText className="w-4 h-4 mr-2 text-muted-foreground" /> Print Invoice
             </DropdownMenuItem>
           </>
         )}

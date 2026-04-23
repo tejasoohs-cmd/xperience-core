@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,6 @@ import { useAppSettings } from '@/lib/useAppSettings';
 import { calcBookingTotals, formatConfNumber } from '@/lib/formatters';
 import { logActivity } from '@/lib/activityLog';
 import PrintMenu from '@/components/booking/PrintMenu';
-import { DriverTripSheet, AffiliateTripSheet, CustomerTripSheet } from '@/components/booking/TripSheetPrint';
 import { Save, Copy, ArrowLeftRight, Trash2, ArrowLeft } from 'lucide-react';
 
 export default function BookingForm() {
@@ -28,7 +28,6 @@ export default function BookingForm() {
     additional_passengers: [],
   });
   const [saving, setSaving] = useState(false);
-  const [printMode, setPrintMode] = useState(null); // 'driver' | 'affiliate' | 'customer' | 'receipt'
 
   const { data: existing } = useQuery({
     queryKey: ['booking', id],
@@ -61,20 +60,7 @@ export default function BookingForm() {
 
   const isLocked = !isNew && (form.invoice_id || form.statement_id);
 
-  const vehicleType = vehicleTypes.find(v => v.id === form.vehicle_type_id);
-  const vehicle = vehicles.find(v => v.id === form.vehicle_id);
-  const driver = drivers.find(d => d.id === form.driver_id);
-  const affiliate = affiliates.find(a => a.id === form.affiliate_id);
-  const account = accounts.find(a => a.id === form.account_id);
-  const company = null; // fetched in print component if needed
 
-  // Print trigger: when printMode changes to a valid mode, print then clear
-  React.useEffect(() => {
-    if (printMode) {
-      const t = setTimeout(() => { window.print(); setPrintMode(null); }, 300);
-      return () => clearTimeout(t);
-    }
-  }, [printMode]);
 
   const handleParserApply = (parsedData) => {
     setForm(prev => ({ ...prev, ...parsedData }));
@@ -174,7 +160,7 @@ export default function BookingForm() {
               <ArrowLeft className="w-4 h-4 mr-1" /> Back
             </Button>
             {!isNew && (
-              <PrintMenu booking={form} setPrintMode={setPrintMode} />
+              <PrintMenu booking={form} />
             )}
             {!isNew && (
               <>
@@ -213,11 +199,6 @@ export default function BookingForm() {
       </div>
 
       <PricingSummary form={form} />
-
-      {/* Trip Sheet Print Templates */}
-      {printMode === 'driver' && <DriverTripSheet booking={form} settings={settings} vehicleType={vehicleType} vehicle={vehicle} driver={driver} />}
-      {printMode === 'affiliate' && <AffiliateTripSheet booking={form} settings={settings} vehicleType={vehicleType} affiliate={affiliate} />}
-      {(printMode === 'customer' || printMode === 'receipt') && <CustomerTripSheet booking={form} settings={settings} vehicleType={vehicleType} account={account} company={null} mode={printMode} />}
 
       <div className="mt-6">
         <BookingFormFields

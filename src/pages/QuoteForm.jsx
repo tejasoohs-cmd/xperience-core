@@ -120,7 +120,7 @@ export default function QuoteForm() {
             <Button variant="outline" size="sm" onClick={() => navigate('/quotes')}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
             {canEdit && (
               <>
-                <Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="w-4 h-4 mr-1" /> Print</Button>
+                {!isNew && <Button variant="outline" size="sm" onClick={() => window.open(`/print/quote/${id}`, '_blank')}><Printer className="w-4 h-4 mr-1" /> Print Quote</Button>}
                 {!isNew && form.status === 'Draft' && (
                   <Button variant="outline" size="sm" onClick={() => handleSave('Sent')}>
                     <Send className="w-4 h-4 mr-1" /> Mark Sent
@@ -260,41 +260,6 @@ export default function QuoteForm() {
         </section>
       </div>
 
-      {/* Printable Quote PDF */}
-      <div className="print-only mt-8 bg-white text-black p-10">
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <p className="font-bold text-lg">{settings.company_name}</p>
-            <p className="text-sm text-gray-600">{settings.company_address}</p>
-            {settings.company_tax_id && <p className="text-sm text-gray-600">TRN: {settings.company_tax_id}</p>}
-          </div>
-          <div className="text-right">
-            <p className="font-bold text-2xl text-gray-800">QUOTATION</p>
-            <p className="text-sm">Quote #: <span className="font-mono">{form.quote_number}</span></p>
-            <p className="text-sm">Date: {formatDate(form.quote_date)}</p>
-            {form.expiry_date && <p className="text-sm font-medium text-red-600">Valid Until: {formatDate(form.expiry_date)}</p>}
-          </div>
-        </div>
-        <div className="mb-6 p-4 bg-gray-50 rounded">
-          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Prepared For</p>
-          <p className="font-bold">{companyMap[accounts.find(a => a.id === form.account_id)?.company_id]?.company_name || '—'}</p>
-        </div>
-        <table className="w-full text-sm mb-6 border-collapse">
-          <tbody>
-            <tr className="border-b border-gray-200"><td className="py-2 text-gray-500 w-40">Service Type</td><td className="py-2 font-medium">{form.service_type || '—'}</td></tr>
-            <tr className="border-b border-gray-200"><td className="py-2 text-gray-500">Pickup Date</td><td className="py-2">{formatDate(form.pickup_date)}</td></tr>
-            <tr className="border-b border-gray-200"><td className="py-2 text-gray-500">Pickup Time</td><td className="py-2 font-mono">{form.pickup_time || '—'}</td></tr>
-            <tr className="border-b border-gray-200"><td className="py-2 text-gray-500">From</td><td className="py-2">{form.pickup_location || '—'}</td></tr>
-            <tr className="border-b border-gray-200"><td className="py-2 text-gray-500">To</td><td className="py-2">{form.dropoff_location || '—'}</td></tr>
-            <tr className="border-b border-gray-200"><td className="py-2 text-gray-500">Passengers</td><td className="py-2 font-mono">{form.passenger_count}</td></tr>
-            <tr className="border-b border-gray-200"><td className="py-2 text-gray-500">Subtotal</td><td className="py-2 font-mono">{formatCurrency(totals.clientNet)}</td></tr>
-            <tr className="border-b border-gray-200"><td className="py-2 text-gray-500">VAT ({form.client_vat_percent}%)</td><td className="py-2 font-mono">{formatCurrency(totals.clientVat)}</td></tr>
-            <tr><td className="py-2 font-bold">Total (AED)</td><td className="py-2 font-bold font-mono text-lg">{formatCurrency(totals.clientTotal)}</td></tr>
-          </tbody>
-        </table>
-        {form.notes && <div className="mt-4 p-4 bg-gray-50 rounded text-sm text-gray-700">{form.notes}</div>}
-        {form.expiry_date && <p className="mt-6 text-sm text-gray-500 italic">This quotation is valid until {formatDate(form.expiry_date)}. Prices are subject to availability.</p>}
-      </div>
     </div>
   );
 }

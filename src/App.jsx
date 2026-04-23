@@ -26,6 +26,17 @@ import QuoteForm from '@/pages/QuoteForm';
 import VatReport from '@/pages/VatReport';
 import StoredAddresses from '@/pages/StoredAddresses';
 import CustomReports from '@/pages/CustomReports';
+import Dispatch from '@/pages/Dispatch';
+import CalendarView from '@/pages/CalendarView';
+// Print routes (standalone, no layout)
+import PrintDriverTripSheet from '@/pages/print/PrintDriverTripSheet';
+import PrintAffiliateTripSheet from '@/pages/print/PrintAffiliateTripSheet';
+import PrintCustomerTripSheet from '@/pages/print/PrintCustomerTripSheet';
+import PrintReservationReceipt from '@/pages/print/PrintReservationReceipt';
+import PrintCancellationConfirmation from '@/pages/print/PrintCancellationConfirmation';
+import PrintInvoice from '@/pages/print/PrintInvoice';
+import PrintVendorStatement from '@/pages/print/PrintVendorStatement';
+import PrintQuote from '@/pages/print/PrintQuote';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -52,8 +63,21 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
+      {/* Standalone print routes — no app layout */}
+      <Route path="/print/driver-trip-sheet/:id" element={<PrintDriverTripSheet />} />
+      <Route path="/print/affiliate-trip-sheet/:id" element={<PrintAffiliateTripSheet />} />
+      <Route path="/print/customer-trip-sheet/:id" element={<PrintCustomerTripSheet />} />
+      <Route path="/print/reservation-receipt/:id" element={<PrintReservationReceipt />} />
+      <Route path="/print/cancellation-confirmation/:id" element={<PrintCancellationConfirmation />} />
+      <Route path="/print/invoice/:id" element={<PrintInvoice />} />
+      <Route path="/print/vendor-statement/:id" element={<PrintVendorStatement />} />
+      <Route path="/print/quote/:id" element={<PrintQuote />} />
+
+      {/* App routes with sidebar layout */}
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/dispatch" element={<Dispatch />} />
+        <Route path="/calendar" element={<CalendarView />} />
         <Route path="/bookings" element={<BookingsList />} />
         <Route path="/bookings/new" element={<BookingForm />} />
         <Route path="/bookings/:id" element={<BookingForm />} />
