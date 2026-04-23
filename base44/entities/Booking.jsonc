@@ -18,18 +18,19 @@
       "default": "New"
     },
     "service_type": {
-      "type": "string",
-      "description": "Arrival/Departure/Point-to-Point/Hourly/Tour"
+      "type": "string"
     },
     "pickup_date": {
       "type": "string",
       "format": "date"
     },
     "pickup_time": {
-      "type": "string",
-      "description": "HH:MM format"
+      "type": "string"
     },
     "pickup_location": {
+      "type": "string"
+    },
+    "dropoff_location": {
       "type": "string"
     },
     "stops": {
@@ -46,12 +47,43 @@
         }
       }
     },
-    "dropoff_location": {
-      "type": "string"
+    "routing_points": {
+      "type": "array",
+      "description": "Multi-point routing timeline (replaces simple stops for complex tours)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Pickup | Stop | Dropoff"
+          },
+          "location_description": {
+            "type": "string"
+          },
+          "time_in": {
+            "type": "string"
+          },
+          "passenger_names": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "passenger_count": {
+            "type": "number"
+          },
+          "phone_number": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Remarks / passenger agency for driver reference"
+          }
+        }
+      }
     },
     "vehicle_type_id": {
-      "type": "string",
-      "description": "FK to VehicleType"
+      "type": "string"
     },
     "passenger_count": {
       "type": "number",
@@ -113,16 +145,13 @@
       "default": "InHouse"
     },
     "driver_id": {
-      "type": "string",
-      "description": "FK to Driver (nullable)"
+      "type": "string"
     },
     "vehicle_id": {
-      "type": "string",
-      "description": "FK to Vehicle (nullable)"
+      "type": "string"
     },
     "affiliate_id": {
-      "type": "string",
-      "description": "FK to Affiliate (nullable)"
+      "type": "string"
     },
     "currency": {
       "type": "string",
@@ -152,8 +181,7 @@
     },
     "client_total": {
       "type": "number",
-      "default": 0,
-      "description": "Auto-calculated"
+      "default": 0
     },
     "vendor_base_rate": {
       "type": "number",
@@ -179,13 +207,11 @@
     },
     "vendor_total": {
       "type": "number",
-      "default": 0,
-      "description": "Auto-calculated"
+      "default": 0
     },
     "profit": {
       "type": "number",
-      "default": 0,
-      "description": "Auto: client_total - vendor_total"
+      "default": 0
     },
     "trip_notes": {
       "type": "string"
@@ -200,16 +226,13 @@
       "type": "string"
     },
     "invoice_id": {
-      "type": "string",
-      "description": "FK to Invoice (nullable)"
+      "type": "string"
     },
     "statement_id": {
-      "type": "string",
-      "description": "FK to VendorStatement (nullable)"
+      "type": "string"
     },
     "round_trip_parent_id": {
-      "type": "string",
-      "description": "Links round-trip booking pairs (nullable)"
+      "type": "string"
     }
   },
   "required": [

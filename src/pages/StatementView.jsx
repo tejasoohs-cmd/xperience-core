@@ -26,18 +26,32 @@ export default function StatementView() {
   const stmtBookings = useMemo(() => bookings.filter(b => (stmt?.booking_ids || []).includes(b.id)), [bookings, stmt]);
 
   const [payment, setPayment] = useState({});
+  const [stmtDate, setStmtDate] = useState('');
+  const [dateSaving, setDateSaving] = useState(false);
+
   useEffect(() => {
-    if (stmt) setPayment({
-      paid_amount: stmt.paid_amount || 0, payment_status: stmt.payment_status || 'Pending',
-      payment_date: stmt.payment_date || '', payment_reference: stmt.payment_reference || '',
-      payment_method: stmt.payment_method || '',
-    });
+    if (stmt) {
+      setPayment({
+        paid_amount: stmt.paid_amount || 0, payment_status: stmt.payment_status || 'Pending',
+        payment_date: stmt.payment_date || '', payment_reference: stmt.payment_reference || '',
+        payment_method: stmt.payment_method || '',
+      });
+      setStmtDate(stmt.date || '');
+    }
   }, [stmt]);
 
   const savePayment = async () => {
     await base44.entities.VendorStatement.update(id, payment);
     queryClient.invalidateQueries({ queryKey: ['statement', id] });
     queryClient.invalidateQueries({ queryKey: ['statements'] });
+  };
+
+  const saveDate = async () => {
+    setDateSaving(true);
+    await base44.entities.VendorStatement.update(id, { date: stmtDate });
+    queryClient.invalidateQueries({ queryKey: ['statement', id] });
+    queryClient.invalidateQueries({ queryKey: ['statements'] });
+    setDateSaving(false);
   };
 
   const handleDelete = async () => {
@@ -66,6 +80,18 @@ export default function StatementView() {
         }
       />
 
+      {/* Editable Date (no-print) */}
+      <div className="no-print mb-4 bg-card rounded-lg border border-border p-4 flex flex-wrap items-end gap-4">
+        <div>
+          <Label className="text-xs text-muted-foreground">Statement Date</Label>
+          <Input type="date" value={stmtDate} onChange={e => setStmtDate(e.target.value)} className="bg-secondary border-border" />
+        </div>
+        <Button onClick={saveDate} disabled={dateSaving} variant="outline" size="sm">
+          <Save className="w-4 h-4 mr-1" /> {dateSaving ? 'Saving...' : 'Save Date'}
+        </Button>
+        <span className="text-xs text-muted-foreground self-center">Statement # <span className="font-mono text-foreground">{stmt.statement_number}</span> is immutable</span>
+      </div>
+
       {/* Printable Statement - shows VENDOR amounts only */}
       <div className="bg-white text-black rounded-lg p-6 md:p-10 print:p-0 print:shadow-none">
         <div className="flex justify-between items-start mb-8">
@@ -77,7 +103,7 @@ export default function StatementView() {
           <div className="text-right text-sm">
             <p className="font-bold text-lg">VENDOR STATEMENT</p>
             <p>Statement #: <span className="font-mono">{stmt.statement_number}</span></p>
-            <p>Date: {formatDate(stmt.date)}</p>
+            <p>Date: {formatDate(stmtDate || stmt.date)}</p>
           </div>
         </div>
 
@@ -92,8 +118,8 @@ export default function StatementView() {
             <tr className="border-b-2 border-gray-300">
               <th className="py-2 text-left text-xs font-medium text-gray-500">Conf# / Service</th>
               <th className="py-2 text-left text-xs font-medium text-gray-500">PU Date</th>
-              <th className="py-2 text-left text-xs font-medium text-gray-500 hidden md:table-cell">Passenger</th>
-              <th className="py-2 text-left text-xs font-medium text-gray-500 hidden md:table-cell">Route</th>
+              <th className="py-2 text-left text-xs font-medium text-gray-500">Passenger</th>
+              <th className="py-2 text-left text-xs font-medium text-gray-500">Route</th>
               <th className="py-2 text-right text-xs font-medium text-gray-500">Amount</th>
             </tr>
           </thead>
@@ -104,8 +130,8 @@ export default function StatementView() {
                 <tr key={b.id} className="border-b border-gray-200">
                   <td className="py-2"><span className="font-mono">{formatConfNumber(b.confirmation_number)}</span><br /><span className="text-xs text-gray-500">{b.service_type}</span></td>
                   <td className="py-2">{formatDate(b.pickup_date)}</td>
-                  <td className="py-2 hidden md:table-cell">{b.primary_passenger_name || '—'}</td>
-                  <td className="py-2 hidden md:table-cell text-xs">{b.pickup_location} → {b.dropoff_location}</td>
+                  <td className="py-2">{b.primary_passenger_name || '—'}</td>
+                  <td className="py-2 text-xs">{b.pickup_location} → {b.dropoff_location}</td>
                   <td className="py-2 text-right font-mono">{formatCurrency(t.vendorTotal)}</td>
                 </tr>
               );

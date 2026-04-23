@@ -35,6 +35,7 @@ const NAV_ITEMS = [
   { label: 'Addresses', path: '/addresses', icon: MapPin },
   { type: 'divider' },
   { label: 'VAT Report', path: '/reports/vat', icon: BarChart3 },
+  { label: 'Custom Reports', path: '/reports/custom', icon: BarChart3 },
   { label: 'Settings', path: '/settings', icon: Settings },
 ];
 

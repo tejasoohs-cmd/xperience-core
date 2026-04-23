@@ -25,6 +25,7 @@ import Quotes from '@/pages/Quotes';
 import QuoteForm from '@/pages/QuoteForm';
 import VatReport from '@/pages/VatReport';
 import StoredAddresses from '@/pages/StoredAddresses';
+import CustomReports from '@/pages/CustomReports';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -70,6 +71,7 @@ const AuthenticatedApp = () => {
         <Route path="/vehicle-types" element={<VehicleTypes />} />
         <Route path="/fleet" element={<Fleet />} />
         <Route path="/reports/vat" element={<VatReport />} />
+        <Route path="/reports/custom" element={<CustomReports />} />
         <Route path="/addresses" element={<StoredAddresses />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<PageNotFound />} />

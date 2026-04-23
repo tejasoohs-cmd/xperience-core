@@ -23,6 +23,14 @@ export default function BookingFormFields({ form, setForm, accounts, companies, 
     set('stops', stops);
   };
 
+  const addRoutingPoint = (type) => set('routing_points', [...(form.routing_points || []), { type, time_in: '', location_description: '', passenger_names: [], passenger_count: null, phone_number: '', notes: '' }]);
+  const removeRoutingPoint = (i) => set('routing_points', (form.routing_points || []).filter((_, idx) => idx !== i));
+  const updateRoutingPoint = (i, field, val) => {
+    const pts = [...(form.routing_points || [])];
+    pts[i] = { ...pts[i], [field]: val };
+    set('routing_points', pts);
+  };
+
   const addPassenger = () => set('additional_passengers', [...(form.additional_passengers || []), '']);
   const removePassenger = (i) => set('additional_passengers', (form.additional_passengers || []).filter((_, idx) => idx !== i));
 
@@ -90,8 +98,34 @@ export default function BookingFormFields({ form, setForm, accounts, companies, 
             <Input value={form.dropoff_location || ''} onChange={e => set('dropoff_location', e.target.value)} className="bg-secondary border-border" />
           </div>
         </div>
-        {/* Stops */}
-        {(form.stops || []).map((stop, i) => (
+        {/* Routing Points (multi-pickup) */}
+        {(form.routing_points || []).length > 0 && (
+          <div className="mt-4 space-y-2">
+            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Routing Points</Label>
+            {(form.routing_points || []).map((pt, i) => (
+              <div key={i} className={`border rounded-md p-3 space-y-2 ${pt.type === 'Pickup' ? 'border-emerald-500/30 bg-emerald-500/5' : pt.type === 'Dropoff' ? 'border-blue-500/30 bg-blue-500/5' : 'border-border bg-secondary/30'}`}>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded ${pt.type === 'Pickup' ? 'bg-emerald-500/20 text-emerald-400' : pt.type === 'Dropoff' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'}`}>{pt.type}</span>
+                  <Input type="time" value={pt.time_in || ''} onChange={e => updateRoutingPoint(i, 'time_in', e.target.value)} className="bg-secondary border-border font-mono w-28" placeholder="Time" />
+                  <Button variant="ghost" size="icon" onClick={() => removeRoutingPoint(i)} className="ml-auto text-muted-foreground hover:text-destructive h-7 w-7"><Trash2 className="w-3 h-3" /></Button>
+                </div>
+                <Input value={pt.location_description || ''} onChange={e => updateRoutingPoint(i, 'location_description', e.target.value)} className="bg-secondary border-border" placeholder="Location" />
+                <div className="grid grid-cols-2 gap-2">
+                  <Input value={pt.phone_number || ''} onChange={e => updateRoutingPoint(i, 'phone_number', e.target.value)} className="bg-secondary border-border text-xs" placeholder="Phone" />
+                  <Input value={pt.notes || ''} onChange={e => updateRoutingPoint(i, 'notes', e.target.value)} className="bg-secondary border-border text-xs" placeholder="Remarks (agency name for driver)" />
+                </div>
+                <Input value={(pt.passenger_names || []).join(', ')} onChange={e => updateRoutingPoint(i, 'passenger_names', e.target.value.split(',').map(s => s.trim()).filter(Boolean))} className="bg-secondary border-border text-xs" placeholder="Passenger names (comma separated)" />
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-2 mt-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => addRoutingPoint('Pickup')}><Plus className="w-3 h-3 mr-1" /> Pickup Point</Button>
+          <Button variant="outline" size="sm" onClick={() => addRoutingPoint('Stop')}><Plus className="w-3 h-3 mr-1" /> Stop</Button>
+          <Button variant="outline" size="sm" onClick={() => addRoutingPoint('Dropoff')}><Plus className="w-3 h-3 mr-1" /> Dropoff</Button>
+        </div>
+        {/* Legacy simple stops */}
+        {(form.routing_points || []).length === 0 && (form.stops || []).map((stop, i) => (
           <div key={i} className="flex gap-2 items-end mt-2">
             <div className="flex-1">
               <Label className="text-xs text-muted-foreground">Stop {i + 1}</Label>
@@ -100,7 +134,7 @@ export default function BookingFormFields({ form, setForm, accounts, companies, 
             <Button variant="ghost" size="icon" onClick={() => removeStop(i)} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
           </div>
         ))}
-        <Button variant="outline" size="sm" onClick={addStop} className="mt-2"><Plus className="w-3 h-3 mr-1" /> Add Stop</Button>
+        {(form.routing_points || []).length === 0 && <Button variant="outline" size="sm" onClick={addStop} className="mt-2"><Plus className="w-3 h-3 mr-1" /> Add Stop</Button>}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
           <div>
             <Label className="text-xs text-muted-foreground">Passengers</Label>
