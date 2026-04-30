@@ -6,6 +6,7 @@ const STATUS_CONFIG = {
   'Completed': { bg: 'bg-green-500/20', text: 'text-green-400' },
   'Cancelled': { bg: 'bg-gray-500/20', text: 'text-gray-400 line-through' },
   'No-show': { bg: 'bg-red-500/20', text: 'text-red-400' },
+  'No-Show': { bg: 'bg-red-500/20', text: 'text-red-400' },
   'Pending': { bg: 'bg-gray-500/20', text: 'text-gray-400' },
   'Partial': { bg: 'bg-amber-500/20', text: 'text-amber-400' },
   'Paid': { bg: 'bg-emerald-500/20', text: 'text-emerald-400' },

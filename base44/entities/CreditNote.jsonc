@@ -1,0 +1,52 @@
+{
+  "name": "CreditNote",
+  "type": "object",
+  "properties": {
+    "credit_note_number": {
+      "type": "string",
+      "description": "Auto CN-YYYY-001 format"
+    },
+    "linked_invoice_id": {
+      "type": "string",
+      "description": "FK to Invoice"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "line_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "total_credit": {
+      "type": "number",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Issued"
+      ],
+      "default": "Draft"
+    }
+  },
+  "required": [
+    "credit_note_number",
+    "linked_invoice_id",
+    "date"
+  ]
+}

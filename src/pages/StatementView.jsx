@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import PageHeader from '@/components/ui/PageHeader';
 import { useAppSettings } from '@/lib/useAppSettings';
 import { formatCurrency, formatDate, formatConfNumber, calcBookingTotals } from '@/lib/formatters';
-import { ArrowLeft, Printer, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, Printer, Trash2, Save, Edit } from 'lucide-react';
+import { logActivity } from '@/lib/activityLog';
+import EditStatementTripsModal from '@/components/invoice/EditStatementTripsModal';
 
 export default function StatementView() {
   const { id } = useParams();
@@ -28,6 +30,7 @@ export default function StatementView() {
   const [payment, setPayment] = useState({});
   const [stmtDate, setStmtDate] = useState('');
   const [dateSaving, setDateSaving] = useState(false);
+  const [showEditTrips, setShowEditTrips] = useState(false);
 
   useEffect(() => {
     if (stmt) {
@@ -54,6 +57,30 @@ export default function StatementView() {
     setDateSaving(false);
   };
 
+  const handleEditTripsSave = async (newBookingIds, newTotal) => {
+    const oldIds = new Set(stmt.booking_ids || []);
+    const newIds = new Set(newBookingIds);
+    for (const bId of oldIds) {
+      if (!newIds.has(bId)) {
+        await base44.entities.Booking.update(bId, { statement_id: null });
+        const b = bookings.find(bk => bk.id === bId);
+        await logActivity({ action_type: 'updated', entity_type: 'statement', entity_id: id, entity_label: stmt.statement_number, message: `Removed XT-${b?.confirmation_number} from ${stmt.statement_number}` });
+      }
+    }
+    for (const bId of newIds) {
+      if (!oldIds.has(bId)) {
+        await base44.entities.Booking.update(bId, { statement_id: id });
+        const b = bookings.find(bk => bk.id === bId);
+        await logActivity({ action_type: 'updated', entity_type: 'statement', entity_id: id, entity_label: stmt.statement_number, message: `Added XT-${b?.confirmation_number} to ${stmt.statement_number}` });
+      }
+    }
+    const newStatus = stmt.payment_status === 'Paid' ? 'Partial' : stmt.payment_status;
+    await base44.entities.VendorStatement.update(id, { booking_ids: newBookingIds, total: newTotal, payment_status: newStatus });
+    queryClient.invalidateQueries({ queryKey: ['statement', id] });
+    queryClient.invalidateQueries({ queryKey: ['statements'] });
+    queryClient.invalidateQueries({ queryKey: ['bookings'] });
+  };
+
   const handleDelete = async () => {
     if (!confirm('Delete this statement? Linked bookings will be unlinked.')) return;
     for (const bId of (stmt.booking_ids || [])) {
@@ -72,8 +99,9 @@ export default function StatementView() {
       <PageHeader
         title={stmt.statement_number}
         actions={
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={() => navigate('/statements')}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
+            <Button variant="outline" size="sm" onClick={() => setShowEditTrips(true)}><Edit className="w-4 h-4 mr-1" /> Edit Trips</Button>
             <Button variant="outline" size="sm" onClick={() => window.open(`/print/vendor-statement/${id}`, '_blank')}><Printer className="w-4 h-4 mr-1" /> Print Statement</Button>
             <Button variant="outline" size="sm" onClick={handleDelete} className="text-destructive"><Trash2 className="w-4 h-4 mr-1" /> Delete</Button>
           </div>
@@ -147,6 +175,8 @@ export default function StatementView() {
           </div>
         </div>
       </div>
+
+      <EditStatementTripsModal open={showEditTrips} onClose={() => setShowEditTrips(false)} statement={stmt} stmtBookings={stmtBookings} allBookings={bookings} onSave={handleEditTripsSave} />
 
       {/* Payment Tracking */}
       <div className="no-print mt-6 bg-card rounded-lg border border-border p-5">

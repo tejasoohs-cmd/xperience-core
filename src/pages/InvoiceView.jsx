@@ -10,7 +10,10 @@ import PageHeader from '@/components/ui/PageHeader';
 import StatusPill from '@/components/ui/StatusPill';
 import { useAppSettings } from '@/lib/useAppSettings';
 import { formatCurrency, formatDate, formatConfNumber, calcBookingTotals } from '@/lib/formatters';
-import { ArrowLeft, Printer, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, Printer, Trash2, Save, Edit, FileText } from 'lucide-react';
+import { logActivity } from '@/lib/activityLog';
+import EditTripsModal from '@/components/invoice/EditTripsModal';
+import CreditNoteModal from '@/components/invoice/CreditNoteModal';
 
 export default function InvoiceView() {
   const { id } = useParams();
@@ -35,6 +38,8 @@ export default function InvoiceView() {
   const [payment, setPayment] = useState({});
   const [dates, setDates] = useState({ invoice_date: '', due_date: '' });
   const [datesSaving, setDatesSaving] = useState(false);
+  const [showEditTrips, setShowEditTrips] = useState(false);
+  const [showCreditNote, setShowCreditNote] = useState(false);
 
   useEffect(() => {
     if (inv) {
@@ -63,6 +68,49 @@ export default function InvoiceView() {
     setDatesSaving(false);
   };
 
+  const handleEditTripsSave = async (newBookingIds, liveTotals) => {
+    const oldIds = new Set(inv.booking_ids || []);
+    const newIds = new Set(newBookingIds);
+    // Unlink removed
+    for (const bId of oldIds) {
+      if (!newIds.has(bId)) {
+        await base44.entities.Booking.update(bId, { invoice_id: null });
+        const b = bookings.find(bk => bk.id === bId);
+        await logActivity({ action_type: 'updated', entity_type: 'invoice', entity_id: id, entity_label: inv.invoice_number, message: `Removed ${formatConfNumber(b?.confirmation_number)} from ${inv.invoice_number}` });
+      }
+    }
+    // Link added
+    for (const bId of newIds) {
+      if (!oldIds.has(bId)) {
+        await base44.entities.Booking.update(bId, { invoice_id: id });
+        const b = bookings.find(bk => bk.id === bId);
+        await logActivity({ action_type: 'updated', entity_type: 'invoice', entity_id: id, entity_label: inv.invoice_number, message: `Added ${formatConfNumber(b?.confirmation_number)} to ${inv.invoice_number}` });
+      }
+    }
+    // Update invoice totals
+    const newPaymentStatus = inv.payment_status === 'Paid' ? 'Partial' : inv.payment_status;
+    await base44.entities.Invoice.update(id, {
+      booking_ids: newBookingIds,
+      subtotal: liveTotals.subtotal,
+      vat_total: liveTotals.vat,
+      grand_total: liveTotals.grand,
+      payment_status: newPaymentStatus,
+    });
+    queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+    queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    queryClient.invalidateQueries({ queryKey: ['bookings'] });
+  };
+
+  const handleCreditNoteSave = async (cnData) => {
+    const year = new Date().getFullYear();
+    const allCNs = await base44.entities.CreditNote.list();
+    const nextNum = (allCNs.length + 1).toString().padStart(3, '0');
+    const cnNumber = `CN-${year}-${nextNum}`;
+    const created = await base44.entities.CreditNote.create({ ...cnData, credit_note_number: cnNumber, linked_invoice_id: id });
+    await logActivity({ action_type: 'created', entity_type: 'invoice', entity_id: id, entity_label: inv.invoice_number, message: `Credit note ${cnNumber} issued for ${inv.invoice_number} — AED ${cnData.total_credit.toFixed(2)}` });
+    queryClient.invalidateQueries({ queryKey: ['invoice', id] });
+  };
+
   const handleDelete = async () => {
     if (!confirm('Delete this invoice? Linked bookings will be unlinked.')) return;
     for (const bId of (inv.booking_ids || [])) {
@@ -76,6 +124,8 @@ export default function InvoiceView() {
 
   if (!inv) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
 
+  const formatConfNumber = (n) => n ? `XT-${n}` : '—';
+
   // Use live dates state for PDF rendering
   const displayDate = dates.invoice_date || inv.invoice_date;
   const displayDueDate = dates.due_date || inv.due_date;
@@ -85,8 +135,10 @@ export default function InvoiceView() {
       <PageHeader
         title={inv.invoice_number}
         actions={
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={() => navigate('/invoices')}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
+            <Button variant="outline" size="sm" onClick={() => setShowEditTrips(true)}><Edit className="w-4 h-4 mr-1" /> Edit Trips</Button>
+            <Button variant="outline" size="sm" onClick={() => setShowCreditNote(true)}><FileText className="w-4 h-4 mr-1" /> Credit Note</Button>
             <Button variant="outline" size="sm" onClick={() => window.open(`/print/invoice/${id}`, '_blank')}><Printer className="w-4 h-4 mr-1" /> Print Invoice</Button>
             <Button variant="outline" size="sm" onClick={handleDelete} className="text-destructive"><Trash2 className="w-4 h-4 mr-1" /> Delete</Button>
           </div>
@@ -197,6 +249,9 @@ export default function InvoiceView() {
           <p className="mt-3 text-xs text-gray-500 italic">{settings.invoice_footer_notes}</p>
         )}
       </div>
+
+      <EditTripsModal open={showEditTrips} onClose={() => setShowEditTrips(false)} invoice={inv} invBookings={invBookings} allBookings={bookings} onSave={handleEditTripsSave} />
+      <CreditNoteModal open={showCreditNote} onClose={() => setShowCreditNote(false)} invoice={inv} onSave={handleCreditNoteSave} />
 
       {/* Payment Tracking (no-print) */}
       <div className="no-print mt-6 bg-card rounded-lg border border-border p-5">

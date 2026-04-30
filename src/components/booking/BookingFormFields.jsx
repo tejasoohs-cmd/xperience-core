@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,9 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Plus, Trash2 } from 'lucide-react';
 import { useAppSettings } from '@/lib/useAppSettings';
+import ExtraChargeModal from '@/components/booking/ExtraChargeModal';
 
-export default function BookingFormFields({ form, setForm, accounts, companies, drivers, vehicles, affiliates, vehicleTypes, isLocked }) {
+export default function BookingFormFields({ form, setForm, accounts, companies, drivers, vehicles, affiliates, vehicleTypes }) {
   const { settings } = useAppSettings();
+  const [showExtraModal, setShowExtraModal] = useState(false);
   const serviceTypes = settings.service_types_list || ['Arrival', 'Departure', 'Point-to-Point', 'Hourly', 'Tour'];
   const accountMap = Object.fromEntries((accounts || []).map(a => [a.id, a]));
   const companyMap = Object.fromEntries((companies || []).map(c => [c.id, c]));
@@ -40,6 +42,15 @@ export default function BookingFormFields({ form, setForm, accounts, companies, 
   const addVendorExtra = () => set('vendor_extras', [...(form.vendor_extras || []), { label: '', amount: 0 }]);
   const removeVendorExtra = (i) => set('vendor_extras', (form.vendor_extras || []).filter((_, idx) => idx !== i));
 
+  const handleAddExtraCharge = ({ label, amount, applyTo }) => {
+    if (applyTo === 'Client Only' || applyTo === 'Both') {
+      set('client_extras', [...(form.client_extras || []), { label, amount }]);
+    }
+    if (applyTo === 'Vendor Only' || applyTo === 'Both') {
+      set('vendor_extras', [...(form.vendor_extras || []), { label, amount }]);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Trip Details */}
@@ -55,7 +66,7 @@ export default function BookingFormFields({ form, setForm, accounts, companies, 
             <Select value={form.status || 'New'} onValueChange={v => set('status', v)}>
               <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {['New', 'Confirmed', 'Completed', 'Cancelled', 'No-show'].map(s => (
+                {['New', 'Confirmed', 'Completed', 'Cancelled', 'No-Show'].map(s => (
                   <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}
               </SelectContent>
@@ -127,8 +138,12 @@ export default function BookingFormFields({ form, setForm, accounts, companies, 
         {/* Legacy simple stops */}
         {(form.routing_points || []).length === 0 && (form.stops || []).map((stop, i) => (
           <div key={i} className="flex gap-2 items-end mt-2">
+            <div>
+              <Label className="text-xs text-muted-foreground">Stop {i + 1} Time</Label>
+              <Input type="time" value={stop.time || ''} onChange={e => updateStop(i, 'time', e.target.value)} className="bg-secondary border-border font-mono w-28" />
+            </div>
             <div className="flex-1">
-              <Label className="text-xs text-muted-foreground">Stop {i + 1}</Label>
+              <Label className="text-xs text-muted-foreground">Location</Label>
               <Input value={stop.location} onChange={e => updateStop(i, 'location', e.target.value)} className="bg-secondary border-border" placeholder="Location" />
             </div>
             <Button variant="ghost" size="icon" onClick={() => removeStop(i)} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
@@ -281,12 +296,44 @@ export default function BookingFormFields({ form, setForm, accounts, companies, 
         </div>
       </section>
 
+      {/* No-Show Options */}
+      {(form.status === 'No-show' || form.status === 'No-Show') && (
+        <section>
+          <h3 className="text-lg font-serif italic text-foreground mb-4 pb-2 border-b border-border">No-Show Options</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Charge client cancellation fee?</Label>
+              <div className="flex gap-3">
+                <Button size="sm" variant={form.noshow_charge_client ? 'default' : 'outline'} onClick={() => set('noshow_charge_client', true)} className={form.noshow_charge_client ? 'bg-primary text-primary-foreground' : ''}>Yes</Button>
+                <Button size="sm" variant={form.noshow_charge_client === false ? 'default' : 'outline'} onClick={() => set('noshow_charge_client', false)}>No</Button>
+              </div>
+              {form.noshow_charge_client && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Cancellation Fee Amount (AED)</Label>
+                  <Input type="number" min={0} step="0.01" value={form.cancellation_fee_amount || 0} onChange={e => set('cancellation_fee_amount', parseFloat(e.target.value) || 0)} className="bg-secondary border-border font-mono" />
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Pay vendor?</Label>
+              <div className="flex gap-3">
+                <Button size="sm" variant={form.noshow_pay_vendor !== false ? 'default' : 'outline'} onClick={() => set('noshow_pay_vendor', true)} className={form.noshow_pay_vendor !== false ? 'bg-primary text-primary-foreground' : ''}>Yes</Button>
+                <Button size="sm" variant={form.noshow_pay_vendor === false ? 'default' : 'outline'} onClick={() => set('noshow_pay_vendor', false)}>No (zero vendor rate)</Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Pricing */}
       <section>
         <h3 className="text-lg font-serif italic text-foreground mb-4 pb-2 border-b border-border">Pricing</h3>
+        <div className="mb-3">
+          <Button variant="outline" size="sm" onClick={() => setShowExtraModal(true)}><Plus className="w-3 h-3 mr-1" /> Add Extra Charge</Button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Client side */}
-          <div className={`space-y-3 ${isLocked ? 'opacity-60 pointer-events-none' : ''}`}>
+          <div className="space-y-3">
             <h4 className="text-sm font-medium text-foreground">Client Rate</h4>
             <div>
               <Label className="text-xs text-muted-foreground">Base Rate (AED) *</Label>
@@ -306,7 +353,7 @@ export default function BookingFormFields({ form, setForm, accounts, companies, 
             </div>
           </div>
           {/* Vendor side */}
-          <div className={`space-y-3 ${isLocked ? 'opacity-60 pointer-events-none' : ''}`}>
+          <div className="space-y-3">
             <h4 className="text-sm font-medium text-foreground">Vendor Rate</h4>
             <div>
               <Label className="text-xs text-muted-foreground">Base Rate (AED)</Label>
@@ -346,6 +393,8 @@ export default function BookingFormFields({ form, setForm, accounts, companies, 
           </div>
         </div>
       </section>
+
+      <ExtraChargeModal open={showExtraModal} onClose={() => setShowExtraModal(false)} onAdd={handleAddExtraCharge} />
     </div>
   );
 }
