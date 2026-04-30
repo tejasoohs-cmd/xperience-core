@@ -77,8 +77,8 @@ function buildRoutingPoints(booking) {
       passenger_count: booking.passenger_count, phone_number: booking.primary_passenger_phone, notes: '',
     });
   }
-  (booking.stops || []).forEach((s, i) => {
-    pts.push({ type: 'Stop', time_in: '', location_description: s.location, passenger_names: [], passenger_count: '', notes: s.notes || '' });
+  (booking.stops || []).forEach((s) => {
+    pts.push({ type: 'Stop', time_in: s.time || '', location_description: s.location, passenger_names: [], passenger_count: '', notes: s.notes || '' });
   });
   if (booking.dropoff_location) {
     pts.push({ type: 'Dropoff', time_in: '', location_description: booking.dropoff_location, passenger_names: [], passenger_count: '', notes: '' });

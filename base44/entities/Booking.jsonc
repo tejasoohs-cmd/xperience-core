@@ -41,6 +41,10 @@
           "location": {
             "type": "string"
           },
+          "time": {
+            "type": "string",
+            "description": "Stop time in HH:mm format"
+          },
           "notes": {
             "type": "string"
           }
@@ -233,6 +237,21 @@
     },
     "round_trip_parent_id": {
       "type": "string"
+    },
+    "noshow_charge_client": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to charge the client a cancellation fee for a no-show"
+    },
+    "noshow_pay_vendor": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to pay the vendor for a no-show booking"
+    },
+    "cancellation_fee_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Amount charged to client for no-show (AED)"
     }
   },
   "required": [
