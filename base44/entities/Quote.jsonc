@@ -156,6 +156,10 @@
     },
     "po_client_ref": {
       "type": "string"
+    },
+    "parent_quote_id": {
+      "type": "string",
+      "description": "FK to parent Quote for revisions"
     }
   },
   "required": [

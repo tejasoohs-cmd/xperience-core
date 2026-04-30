@@ -9,14 +9,31 @@ import StatusPill from '@/components/ui/StatusPill';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { Plus, FileText, TrendingUp } from 'lucide-react';
 import { format, addDays, differenceInDays } from 'date-fns';
+import { useEffect } from 'react';
 
 export default function Quotes() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState('all');
+  const [autoExpired, setAutoExpired] = useState([]);
 
   const { data: quotes = [] } = useQuery({ queryKey: ['quotes'], queryFn: () => base44.entities.Quote.list('-quote_date', 200) });
   const { data: accounts = [] } = useQuery({ queryKey: ['accounts'], queryFn: () => base44.entities.Account.list() });
   const { data: companies = [] } = useQuery({ queryKey: ['companies'], queryFn: () => base44.entities.Company.list() });
+
+  // Auto-expire Sent quotes past their expiry date
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const toExpire = quotes.filter(q => q.status === 'Sent' && q.expiry_date && q.expiry_date < today);
+    if (toExpire.length === 0) return;
+    const ids = [];
+    Promise.all(toExpire.map(q => base44.entities.Quote.update(q.id, { status: 'Expired' }).then(() => ids.push(q.id)))).then(() => {
+      if (ids.length > 0) {
+        setAutoExpired(ids);
+        queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      }
+    });
+  }, [quotes.length]);
 
   const accountMap = useMemo(() => Object.fromEntries(accounts.map(a => [a.id, a])), [accounts]);
   const companyMap = useMemo(() => Object.fromEntries(companies.map(c => [c.id, c])), [companies]);
@@ -115,7 +132,12 @@ export default function Quotes() {
                   <td className="px-4 py-3 text-muted-foreground font-mono text-xs hidden lg:table-cell">
                     {q.expiry_date ? (isExpired ? <span className="text-red-400">Expired</span> : formatDate(q.expiry_date)) : '—'}
                   </td>
-                  <td className="px-4 py-3"><StatusPill status={q.status} size="xs" /></td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <StatusPill status={q.status} size="xs" />
+                      {autoExpired.includes(q.id) && <span className="text-[10px] font-mono bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded-full">Auto-expired</span>}
+                    </div>
+                  </td>
                 </tr>
               );
             })}

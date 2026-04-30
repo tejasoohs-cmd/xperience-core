@@ -7,10 +7,29 @@ import { Button } from '@/components/ui/button';
 import { Plus, Trash2 } from 'lucide-react';
 import { useAppSettings } from '@/lib/useAppSettings';
 import ExtraChargeModal from '@/components/booking/ExtraChargeModal';
+import ConflictWarningModal from '@/components/bookings/ConflictWarningModal';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+
+function checkConflict(allBookings, field, value, form) {
+  if (!value || !form.pickup_date || !form.pickup_time) return null;
+  const [h, m] = form.pickup_time.split(':').map(Number);
+  const pickupMins = h * 60 + m;
+  return allBookings.find(b => {
+    if (b.id === form.id) return false;
+    if (b[field] !== value) return false;
+    if (b.pickup_date !== form.pickup_date) return false;
+    if (!b.pickup_time) return false;
+    const [bh, bm] = b.pickup_time.split(':').map(Number);
+    return Math.abs(bh * 60 + bm - pickupMins) < 120;
+  }) || null;
+}
 
 export default function BookingFormFields({ form, setForm, accounts, companies, drivers, vehicles, affiliates, vehicleTypes }) {
   const { settings } = useAppSettings();
   const [showExtraModal, setShowExtraModal] = useState(false);
+  const [conflict, setConflict] = useState(null); // { resourceName, conflictBooking, pendingField, pendingValue }
+  const { data: allBookings = [] } = useQuery({ queryKey: ['bookings'], queryFn: () => base44.entities.Booking.list('-pickup_date', 500) });
   const serviceTypes = settings.service_types_list || ['Arrival', 'Departure', 'Point-to-Point', 'Hourly', 'Tour'];
   const accountMap = Object.fromEntries((accounts || []).map(a => [a.id, a]));
   const companyMap = Object.fromEntries((companies || []).map(c => [c.id, c]));
@@ -261,7 +280,15 @@ export default function BookingFormFields({ form, setForm, accounts, companies, 
             <>
               <div>
                 <Label className="text-xs text-muted-foreground">Driver</Label>
-                <Select value={form.driver_id || ''} onValueChange={v => set('driver_id', v)}>
+                <Select value={form.driver_id || ''} onValueChange={v => {
+                  const conflicting = checkConflict(allBookings, 'driver_id', v, form);
+                  if (conflicting) {
+                    const drv = (drivers || []).find(d => d.id === v);
+                    setConflict({ resourceName: drv?.name || 'Driver', conflictBooking: conflicting, pendingField: 'driver_id', pendingValue: v });
+                  } else {
+                    set('driver_id', v);
+                  }
+                }}>
                   <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder="Select driver..." /></SelectTrigger>
                   <SelectContent>
                     {(drivers || []).filter(d => d.status === 'active').map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
@@ -270,7 +297,15 @@ export default function BookingFormFields({ form, setForm, accounts, companies, 
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Vehicle</Label>
-                <Select value={form.vehicle_id || ''} onValueChange={v => set('vehicle_id', v)}>
+                <Select value={form.vehicle_id || ''} onValueChange={v => {
+                  const conflicting = checkConflict(allBookings, 'vehicle_id', v, form);
+                  if (conflicting) {
+                    const veh = (vehicles || []).find(x => x.id === v);
+                    setConflict({ resourceName: veh?.plate_number || 'Vehicle', conflictBooking: conflicting, pendingField: 'vehicle_id', pendingValue: v });
+                  } else {
+                    set('vehicle_id', v);
+                  }
+                }}>
                   <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder="Select vehicle..." /></SelectTrigger>
                   <SelectContent>
                     {(vehicles || []).filter(v => v.status === 'active').map(v => <SelectItem key={v.id} value={v.id}>{v.plate_number} — {v.make} {v.model}</SelectItem>)}
@@ -395,6 +430,14 @@ export default function BookingFormFields({ form, setForm, accounts, companies, 
       </section>
 
       <ExtraChargeModal open={showExtraModal} onClose={() => setShowExtraModal(false)} onAdd={handleAddExtraCharge} />
+      <ConflictWarningModal
+        conflict={conflict}
+        onCancel={() => setConflict(null)}
+        onAssignAnyway={() => {
+          if (conflict) set(conflict.pendingField, conflict.pendingValue);
+          setConflict(null);
+        }}
+      />
     </div>
   );
 }

@@ -137,6 +137,33 @@ export default function PrintQuote() {
         This quotation is valid until {formatDate(quote.expiry_date)}. Please confirm acceptance to convert to booking.
         {settings.invoice_footer_notes && <div style={{ marginTop: 6 }}>{settings.invoice_footer_notes}</div>}
       </div>
+
+      {/* Signature Block — print only */}
+      <div style={{ marginTop: 40, borderTop: '1px solid #ccc', paddingTop: 20, pageBreakInside: 'avoid' }}>
+        <div style={{ display: 'flex', gap: 40 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 10, color: '#444', fontWeight: 'bold', marginBottom: 20 }}>Accepted by:</div>
+            <div style={{ borderBottom: '1px solid #000', marginBottom: 6, height: 32 }}></div>
+            <div style={{ fontSize: 9, color: '#666' }}>Signature</div>
+            <div style={{ borderBottom: '1px solid #000', marginTop: 16, marginBottom: 6, height: 20 }}></div>
+            <div style={{ fontSize: 9, color: '#666' }}>Printed Name</div>
+            <div style={{ borderBottom: '1px solid #000', marginTop: 16, marginBottom: 6, height: 20 }}></div>
+            <div style={{ fontSize: 9, color: '#666' }}>Date</div>
+            <div style={{ marginTop: 12, fontSize: 9, color: '#666', fontStyle: 'italic' }}>
+              On behalf of: <strong style={{ color: '#000' }}>{company?.company_name || account?.contact_name || '—'}</strong>
+            </div>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 10, color: '#444', fontWeight: 'bold', marginBottom: 20 }}>Authorized by {settings.company_name || 'Xperience Tourism LLC'}:</div>
+            <div style={{ borderBottom: '1px solid #000', marginBottom: 6, height: 32 }}></div>
+            <div style={{ fontSize: 9, color: '#666' }}>Signature</div>
+            <div style={{ borderBottom: '1px solid #000', marginTop: 16, marginBottom: 6, height: 20 }}></div>
+            <div style={{ fontSize: 9, color: '#666' }}>Printed Name</div>
+            <div style={{ borderBottom: '1px solid #000', marginTop: 16, marginBottom: 6, height: 20 }}></div>
+            <div style={{ fontSize: 9, color: '#666' }}>Date</div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { Menu } from 'lucide-react';
+import { KeyboardShortcutsHint } from '@/components/ui/KeyboardShortcuts';
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -17,7 +18,7 @@ export default function AppLayout() {
             <Menu className="w-5 h-5" />
           </button>
           <span className="text-lg font-serif italic text-primary">X</span>
-          <div className="w-5" />
+          <KeyboardShortcutsHint />
         </header>
 
         {/* Page content */}

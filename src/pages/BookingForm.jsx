@@ -12,6 +12,7 @@ import { useAppSettings } from '@/lib/useAppSettings';
 import { calcBookingTotals, formatConfNumber } from '@/lib/formatters';
 import { logActivity } from '@/lib/activityLog';
 import PrintMenu from '@/components/booking/PrintMenu';
+import VoiceInput from '@/components/booking/VoiceInput';
 import { Save, Copy, ArrowLeftRight, Trash2, ArrowLeft } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
@@ -287,20 +288,23 @@ export default function BookingForm() {
         }
       />
 
-      {/* AI Parser — top of form */}
-      <div className="mb-4 p-4 bg-primary/5 border border-primary/20 rounded-lg flex items-center gap-3">
-        <div className="flex-1">
+      {/* AI Parser + Voice Input — top of form */}
+      <div className="mb-4 p-4 bg-primary/5 border border-primary/20 rounded-lg flex items-center gap-3 flex-wrap">
+        <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground">Smart Booking Parser</p>
-          <p className="text-xs text-muted-foreground">Paste a WhatsApp message or email and let AI extract the booking details</p>
+          <p className="text-xs text-muted-foreground">Paste a WhatsApp message or email, or use voice input to auto-fill</p>
         </div>
-        <BookingParser
-          onApply={handleParserApply}
-          accounts={accounts}
-          companies={companies}
-          affiliates={affiliates}
-          vehicleTypes={vehicleTypes}
-          serviceTypes={settings.service_types_list}
-        />
+        <div className="flex gap-2 flex-shrink-0">
+          <VoiceInput onApply={handleParserApply} />
+          <BookingParser
+            onApply={handleParserApply}
+            accounts={accounts}
+            companies={companies}
+            affiliates={affiliates}
+            vehicleTypes={vehicleTypes}
+            serviceTypes={settings.service_types_list}
+          />
+        </div>
       </div>
 
       <PricingSummary form={form} />

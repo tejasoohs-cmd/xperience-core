@@ -12,9 +12,11 @@ import PricingSummary from '@/components/booking/PricingSummary';
 import BookingParser from '@/components/booking/BookingParser';
 import { useAppSettings } from '@/lib/useAppSettings';
 import { calcBookingTotals, formatCurrency, formatDate } from '@/lib/formatters';
+import StatusPill from '@/components/ui/StatusPill';
 import { logActivity } from '@/lib/activityLog';
-import { Save, ArrowLeft, Send, CheckCircle, XCircle, ArrowRight, Printer, Plus, Trash2 } from 'lucide-react';
+import { Save, ArrowLeft, Send, CheckCircle, XCircle, ArrowRight, Printer, Plus, Trash2, Copy } from 'lucide-react';
 import { format, addDays } from 'date-fns';
+import { useMemo } from 'react';
 
 export default function QuoteForm() {
   const { id } = useParams();
@@ -37,6 +39,8 @@ export default function QuoteForm() {
     queryFn: () => base44.entities.Quote.filter({ id }),
     enabled: !isNew,
   });
+  const { data: allQuotes = [] } = useQuery({ queryKey: ['quotes'], queryFn: () => base44.entities.Quote.list('-quote_date', 200) });
+  const revisions = useMemo(() => allQuotes.filter(q => q.parent_quote_id === id), [allQuotes, id]);
   const { data: accounts = [] } = useQuery({ queryKey: ['accounts'], queryFn: () => base44.entities.Account.list() });
   const { data: companies = [] } = useQuery({ queryKey: ['companies'], queryFn: () => base44.entities.Company.list() });
   const { data: affiliates = [] } = useQuery({ queryKey: ['affiliates'], queryFn: () => base44.entities.Affiliate.list() });
@@ -75,6 +79,28 @@ export default function QuoteForm() {
     queryClient.invalidateQueries({ queryKey: ['activityLog'] });
     setSaving(false);
     navigate('/quotes');
+  };
+
+  const handleDuplicateAsRevision = async () => {
+    setSaving(true);
+    const qNum = await getNextQuoteNumber();
+    // Build versioned number e.g. Q-2026-001-V2
+    const base = form.quote_number || qNum;
+    const vMatch = base.match(/-V(\d+)$/);
+    const vNum = vMatch ? parseInt(vMatch[1]) + 1 : 2;
+    const versionedNum = vMatch ? base.replace(/-V\d+$/, `-V${vNum}`) : `${base}-V${vNum}`;
+    const { id: _id, created_date, updated_date, created_by, converted_booking_id, ...rest } = form;
+    const created = await base44.entities.Quote.create({
+      ...rest,
+      quote_number: versionedNum,
+      status: 'Draft',
+      quote_date: new Date().toISOString().split('T')[0],
+      parent_quote_id: id,
+    });
+    await logActivity({ action_type: 'revised', entity_type: 'quote', entity_id: created.id, entity_label: versionedNum, message: `Quote ${versionedNum} created as revision of ${form.quote_number}` });
+    queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    setSaving(false);
+    navigate(`/quotes/${created.id}`);
   };
 
   const handleConvert = async () => {
@@ -121,6 +147,7 @@ export default function QuoteForm() {
             {canEdit && (
               <>
                 {!isNew && <Button variant="outline" size="sm" onClick={() => window.open(`/print/quote/${id}`, '_blank')}><Printer className="w-4 h-4 mr-1" /> Print Quote</Button>}
+                {!isNew && <Button variant="outline" size="sm" onClick={handleDuplicateAsRevision} disabled={saving}><Copy className="w-4 h-4 mr-1" /> Duplicate as Revision</Button>}
                 {!isNew && form.status === 'Draft' && (
                   <Button variant="outline" size="sm" onClick={() => handleSave('Sent')}>
                     <Send className="w-4 h-4 mr-1" /> Mark Sent
@@ -258,6 +285,25 @@ export default function QuoteForm() {
             <div><Label className="text-xs text-muted-foreground">Internal Notes (not on PDF)</Label><Textarea value={form.internal_notes || ''} onChange={e => set('internal_notes', e.target.value)} disabled={!canEdit} className="bg-secondary border-border h-24" /></div>
           </div>
         </section>
+
+        {/* Revisions */}
+        {!isNew && revisions.length > 0 && (
+          <section>
+            <h3 className="text-lg font-serif italic text-foreground mb-4 pb-2 border-b border-border">Revisions</h3>
+            <div className="space-y-1.5">
+              {revisions.map(r => (
+                <div key={r.id} className="flex items-center justify-between bg-secondary/40 rounded-md px-3 py-2">
+                  <span className="font-mono text-sm text-primary">{r.quote_number}</span>
+                  <span className="text-xs text-muted-foreground">{formatDate(r.quote_date)}</span>
+                  <div className="flex items-center gap-2">
+                    <StatusPill status={r.status} size="xs" />
+                    <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => navigate(`/quotes/${r.id}`)}>Open</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
     </div>

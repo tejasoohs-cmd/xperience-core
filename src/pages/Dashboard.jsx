@@ -12,6 +12,9 @@ import TopLists from '@/components/dashboard/TopLists';
 import OverdueInvoices from '@/components/dashboard/OverdueInvoices';
 import QuickActions from '@/components/dashboard/QuickActions';
 import ActivityFeed from '@/components/dashboard/ActivityFeed';
+import UnbilledAgingWidget from '@/components/dashboard/UnbilledAgingWidget';
+import ProfitMarginChart from '@/components/dashboard/ProfitMarginChart';
+import ClientConcentrationWidget from '@/components/dashboard/ClientConcentrationWidget';
 import { exportBookingsToCsv } from '@/lib/excelExport';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
@@ -57,6 +60,17 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <TodayOps title="Today's Operations" bookings={todayBookings} accounts={accounts} drivers={drivers} affiliates={affiliates} vehicleTypes={vehicleTypes} />
         <TodayOps title="Tomorrow's Operations" bookings={tomorrowBookings} accounts={accounts} drivers={drivers} affiliates={affiliates} vehicleTypes={vehicleTypes} />
+      </div>
+
+      {/* Aging + Margin row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <UnbilledAgingWidget bookings={bookings} title="Unbilled Revenue (Client)" filterField="invoice_id" />
+        <UnbilledAgingWidget bookings={bookings} title="Vendor Payables (Unstatement)" filterField="statement_id" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <ProfitMarginChart bookings={bookings} />
+        <ClientConcentrationWidget bookings={bookings} accounts={accounts} companies={companies} />
       </div>
 
       <MonthlyChart bookings={bookings} />
