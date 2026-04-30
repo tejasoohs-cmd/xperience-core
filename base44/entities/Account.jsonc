@@ -59,6 +59,11 @@
       "type": "number",
       "description": "Optional flat rate for this account"
     },
+    "client_credit_balance": {
+      "type": "number",
+      "default": 0,
+      "description": "Available credit balance for this account (AED)"
+    },
     "status": {
       "type": "string",
       "enum": [

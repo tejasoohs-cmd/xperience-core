@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import DirectoryPage from '@/components/directory/DirectoryPage';
 import StatusPill from '@/components/ui/StatusPill';
@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useAppSettings } from '@/lib/useAppSettings';
+import AddCreditModal from '@/components/accounts/AddCreditModal';
+import { PlusCircle } from 'lucide-react';
 
 function AccountForm({ item, onSave, onCancel, companies, settings, getNextAccountNumber }) {
   const [f, setF] = useState(item || {
@@ -70,9 +72,11 @@ function AccountForm({ item, onSave, onCancel, companies, settings, getNextAccou
 }
 
 export default function Accounts() {
+  const queryClient = useQueryClient();
   const { data: accounts = [] } = useQuery({ queryKey: ['accounts'], queryFn: () => base44.entities.Account.list() });
   const { data: companies = [] } = useQuery({ queryKey: ['companies'], queryFn: () => base44.entities.Company.list() });
   const { settings, getNextAccountNumber } = useAppSettings();
+  const [creditAccount, setCreditAccount] = useState(null);
 
   const companyMap = useMemo(() => Object.fromEntries(companies.map(c => [c.id, c])), [companies]);
 
@@ -81,7 +85,26 @@ export default function Accounts() {
     { header: 'Company', accessor: i => companyMap[i.company_id]?.company_name || '—', cellClassName: 'text-foreground', className: 'hidden md:table-cell' },
     { header: 'Contact', accessor: i => i.contact_name, cellClassName: 'font-medium text-foreground' },
     { header: 'Email', accessor: i => i.email, cellClassName: 'text-muted-foreground', className: 'hidden lg:table-cell' },
+    {
+      header: 'Credit',
+      accessor: i => i.client_credit_balance || 0,
+      cellClassName: 'font-mono',
+      className: 'hidden md:table-cell',
+      render: i => i.client_credit_balance > 0
+        ? <span className="text-amber-400 font-mono text-xs">AED {(i.client_credit_balance).toFixed(2)}</span>
+        : <span className="text-muted-foreground text-xs">—</span>
+    },
     { header: 'Status', accessor: i => i.status, render: i => <StatusPill status={i.status} size="xs" /> },
+    {
+      header: '',
+      accessor: i => i.id,
+      cellClassName: '',
+      render: i => (
+        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-amber-400 hover:text-amber-300" onClick={e => { e.stopPropagation(); setCreditAccount(i); }}>
+          <PlusCircle className="w-3.5 h-3.5 mr-1" /> Credit
+        </Button>
+      )
+    },
   ];
 
   const handleSave = async (data, existing) => {
@@ -94,14 +117,24 @@ export default function Accounts() {
   };
 
   return (
-    <DirectoryPage
-      title="Accounts"
-      items={accounts}
-      columns={columns}
-      renderForm={(p) => <AccountForm {...p} companies={companies} settings={settings} getNextAccountNumber={getNextAccountNumber} />}
-      onSave={handleSave}
-      onDelete={(id) => base44.entities.Account.delete(id)}
-      queryKey="accounts"
-    />
+    <>
+      <DirectoryPage
+        title="Accounts"
+        items={accounts}
+        columns={columns}
+        renderForm={(p) => <AccountForm {...p} companies={companies} settings={settings} getNextAccountNumber={getNextAccountNumber} />}
+        onSave={handleSave}
+        onDelete={(id) => base44.entities.Account.delete(id)}
+        queryKey="accounts"
+      />
+      {creditAccount && (
+        <AddCreditModal
+          open={!!creditAccount}
+          onClose={() => setCreditAccount(null)}
+          account={creditAccount}
+          onSaved={() => queryClient.invalidateQueries({ queryKey: ['accounts'] })}
+        />
+      )}
+    </>
   );
 }

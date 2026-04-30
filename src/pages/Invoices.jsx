@@ -10,7 +10,10 @@ import StatusPill from '@/components/ui/StatusPill';
 import { formatCurrency, formatDate, formatConfNumber, calcBookingTotals, getDaysOverdue } from '@/lib/formatters';
 import { exportInvoicesToCsv } from '@/lib/excelExport';
 import { useAppSettings } from '@/lib/useAppSettings';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Plus, FileText, Download } from 'lucide-react';
+import { logActivity } from '@/lib/activityLog';
 
 export default function Invoices() {
   const navigate = useNavigate();
@@ -38,33 +41,64 @@ export default function Invoices() {
   const [pickModal, setPickModal] = useState(null); // account_id
   const [selected, setSelected] = useState([]);
   const [creating, setCreating] = useState(false);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [applyCredit, setApplyCredit] = useState(false);
+  const [creditPromptDone, setCreditPromptDone] = useState(false);
 
   const openPicker = (accountId) => {
     setPickModal(accountId);
     setSelected(readyBookings[accountId]?.map(b => b.id) || []);
+    setDateFrom('');
+    setDateTo('');
+    setApplyCredit(false);
+    setCreditPromptDone(false);
   };
+
+  const pickerBookings = useMemo(() => {
+    const all = readyBookings[pickModal] || [];
+    if (!dateFrom && !dateTo) return all;
+    return all.filter(b => {
+      if (dateFrom && b.pickup_date < dateFrom) return false;
+      if (dateTo && b.pickup_date > dateTo) return false;
+      return true;
+    });
+  }, [readyBookings, pickModal, dateFrom, dateTo]);
 
   const toggleBooking = (bookingId) => {
     setSelected(prev => prev.includes(bookingId) ? prev.filter(id => id !== bookingId) : [...prev, bookingId]);
   };
 
-  const createInvoice = async () => {
-    setCreating(true);
-    const invoiceNumber = await getNextInvoiceNumber();
-    const selectedBookings = readyBookings[pickModal]?.filter(b => selected.includes(b.id)) || [];
-    const acc = accountMap[pickModal];
+  const selectAllInRange = () => {
+    const ids = pickerBookings.map(b => b.id);
+    setSelected(prev => Array.from(new Set([...prev, ...ids])));
+  };
 
-    let subtotal = 0;
-    let vatTotal = 0;
-    selectedBookings.forEach(b => {
+  const selectedBookingsList = useMemo(() => (readyBookings[pickModal] || []).filter(b => selected.includes(b.id)), [readyBookings, pickModal, selected]);
+
+  const liveTotals = useMemo(() => {
+    let subtotal = 0, vatTotal = 0;
+    selectedBookingsList.forEach(b => {
       const t = calcBookingTotals(b);
       subtotal += t.clientNet;
       vatTotal += t.clientVat;
     });
+    return { subtotal, vatTotal, grand: subtotal + vatTotal };
+  }, [selectedBookingsList]);
+
+  const accountCredit = accountMap[pickModal]?.client_credit_balance || 0;
+  const creditToApply = applyCredit ? Math.min(accountCredit, liveTotals.grand) : 0;
+
+  const createInvoice = async () => {
+    setCreating(true);
+    const invoiceNumber = await getNextInvoiceNumber();
+    const acc = accountMap[pickModal];
 
     const dueOffset = acc?.payment_terms === 'Net 30' ? 30 : acc?.payment_terms === 'Net 15' ? 15 : 0;
     const now = new Date();
     const dueDate = new Date(now.getTime() + dueOffset * 86400000).toISOString().split('T')[0];
+
+    const grandAfterCredit = liveTotals.grand - creditToApply;
 
     const inv = await base44.entities.Invoice.create({
       invoice_number: invoiceNumber,
@@ -72,13 +106,29 @@ export default function Invoices() {
       due_date: dueDate,
       account_id: pickModal,
       booking_ids: selected,
-      subtotal, vat_total: vatTotal, grand_total: subtotal + vatTotal,
-      paid_amount: 0, payment_status: 'Pending',
+      subtotal: liveTotals.subtotal,
+      vat_total: liveTotals.vatTotal,
+      grand_total: grandAfterCredit,
+      paid_amount: 0,
+      payment_status: 'Pending',
+      notes: creditToApply > 0 ? `Client credit of AED ${creditToApply.toFixed(2)} applied.` : undefined,
     });
 
-    // Link bookings to invoice
     for (const bId of selected) {
       await base44.entities.Booking.update(bId, { invoice_id: inv.id });
+    }
+
+    if (creditToApply > 0) {
+      const newBalance = accountCredit - creditToApply;
+      await base44.entities.Account.update(pickModal, { client_credit_balance: newBalance });
+      await logActivity({
+        action_type: 'credit_applied',
+        entity_type: 'invoice',
+        entity_id: inv.id,
+        entity_label: invoiceNumber,
+        message: `AED ${creditToApply.toFixed(2)} credit applied to ${invoiceNumber} for ${acc?.contact_name || pickModal}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
     }
 
     queryClient.invalidateQueries({ queryKey: ['invoices'] });
@@ -86,6 +136,15 @@ export default function Invoices() {
     setPickModal(null);
     setCreating(false);
     navigate(`/invoices/${inv.id}`);
+  };
+
+  // Show credit prompt before creating if not yet acknowledged
+  const handleCreateClick = () => {
+    if (accountCredit > 0 && !creditPromptDone) {
+      setCreditPromptDone(true); // show the prompt section inline
+      return;
+    }
+    createInvoice();
   };
 
   const getClientName = (accountId) => {
@@ -169,8 +228,27 @@ export default function Invoices() {
           <DialogHeader>
             <DialogTitle className="font-serif italic">Select Trips to Invoice — {getClientName(pickModal)}</DialogTitle>
           </DialogHeader>
-          <div className="max-h-80 overflow-y-auto divide-y divide-border">
-            {(readyBookings[pickModal] || []).map(b => (
+
+          {/* Date range filter */}
+          <div className="flex items-end gap-2 flex-wrap">
+            <div className="flex-1 min-w-[110px]">
+              <Label className="text-xs text-muted-foreground">From</Label>
+              <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="bg-secondary border-border font-mono text-xs h-8" />
+            </div>
+            <div className="flex-1 min-w-[110px]">
+              <Label className="text-xs text-muted-foreground">To</Label>
+              <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="bg-secondary border-border font-mono text-xs h-8" />
+            </div>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={selectAllInRange}>
+              Select All in Range
+            </Button>
+          </div>
+
+          <div className="max-h-72 overflow-y-auto divide-y divide-border border border-border rounded-md">
+            {pickerBookings.length === 0 && (
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">No trips in this range</p>
+            )}
+            {pickerBookings.map(b => (
               <label key={b.id} className="flex items-center gap-3 px-2 py-3 hover:bg-secondary/50 cursor-pointer">
                 <Checkbox checked={selected.includes(b.id)} onCheckedChange={() => toggleBooking(b.id)} />
                 <div className="flex-1 min-w-0">
@@ -181,10 +259,36 @@ export default function Invoices() {
               </label>
             ))}
           </div>
+
+          {/* Live totals */}
+          <div className="flex justify-between items-center text-sm border-t border-border pt-2">
+            <span className="text-muted-foreground">{selected.length} trip{selected.length !== 1 ? 's' : ''} selected</span>
+            <span className="font-mono font-semibold text-foreground">{formatCurrency(liveTotals.grand)}</span>
+          </div>
+
+          {/* Credit prompt */}
+          {creditPromptDone && accountCredit > 0 && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-md p-3 space-y-2">
+              <p className="text-sm text-amber-400 font-medium">This client has <span className="font-mono">AED {accountCredit.toFixed(2)}</span> available credit.</p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className={`text-xs border-amber-500/50 ${applyCredit ? 'bg-amber-500/20 text-amber-300' : 'text-muted-foreground'}`} onClick={() => setApplyCredit(true)}>
+                  Yes — Apply AED {Math.min(accountCredit, liveTotals.grand).toFixed(2)}
+                </Button>
+                <Button size="sm" variant="outline" className={`text-xs ${!applyCredit ? 'bg-secondary' : 'text-muted-foreground'}`} onClick={() => setApplyCredit(false)}>
+                  No — Skip
+                </Button>
+              </div>
+              {applyCredit && (
+                <p className="text-xs text-muted-foreground">Invoice total after credit: <span className="font-mono text-foreground">{formatCurrency(liveTotals.grand - creditToApply)}</span></p>
+              )}
+            </div>
+          )}
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setPickModal(null)}>Cancel</Button>
-            <Button onClick={createInvoice} disabled={selected.length === 0 || creating} className="bg-primary text-primary-foreground">
-              <FileText className="w-4 h-4 mr-1" /> Create Invoice ({selected.length} trips)
+            <Button onClick={handleCreateClick} disabled={selected.length === 0 || creating} className="bg-primary text-primary-foreground">
+              <FileText className="w-4 h-4 mr-1" />
+              {creditPromptDone ? `Create Invoice${applyCredit ? ' with Credit' : ''}` : `Create Invoice (${selected.length} trips)`}
             </Button>
           </DialogFooter>
         </DialogContent>
