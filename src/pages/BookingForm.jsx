@@ -12,7 +12,8 @@ import { useAppSettings } from '@/lib/useAppSettings';
 import { calcBookingTotals, formatConfNumber } from '@/lib/formatters';
 import { logActivity } from '@/lib/activityLog';
 import PrintMenu from '@/components/booking/PrintMenu';
-import { Save, Copy, ArrowLeftRight, Trash2, ArrowLeft } from 'lucide-react';
+import { Save, Copy, ArrowLeftRight, Trash2, ArrowLeft, AlertCircle } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function BookingForm() {
   const { id } = useParams();
@@ -21,6 +22,7 @@ export default function BookingForm() {
   const queryClient = useQueryClient();
   const { getNextBookingNumber, settings } = useAppSettings();
 
+  const { toast } = useToast();
   const [form, setForm] = useState({
     status: 'New', driver_source: 'InHouse', currency: 'AED',
     client_vat_percent: 5, vendor_vat_percent: 5, passenger_count: 1, luggage_count: 0,
@@ -66,38 +68,68 @@ export default function BookingForm() {
     setForm(prev => ({ ...prev, ...parsedData }));
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    const totals = calcBookingTotals(form);
-    const data = {
-      ...form,
-      client_total: totals.clientTotal,
-      vendor_total: totals.vendorTotal,
-      profit: totals.profit,
-    };
+  const validateForm = () => {
+    const missing = [];
+    if (!form.pickup_date) missing.push('Pickup Date');
+    if (!form.pickup_time) missing.push('Pickup Time');
+    if (!form.pickup_location) missing.push('Pickup Location');
+    if (!form.dropoff_location) missing.push('Dropoff Location');
+    if (!form.account_id) missing.push('Account');
+    if (!form.client_base_rate && form.client_base_rate !== 0) missing.push('Client Rate');
+    return missing;
+  };
 
-    if (isNew) {
-      const confNum = await getNextBookingNumber();
-      data.confirmation_number = confNum;
-      const created = await base44.entities.Booking.create(data);
-      await logActivity({ action_type: 'created', entity_type: 'booking', entity_id: created.id, entity_label: formatConfNumber(confNum), message: `Booking ${formatConfNumber(confNum)} created` });
-    } else {
-      const prevStatus = existing?.[0]?.status;
-      const { id: _id, created_date, updated_date, created_by, ...updateData } = data;
-      await base44.entities.Booking.update(id, updateData);
-      const label = formatConfNumber(form.confirmation_number);
-      if (prevStatus && prevStatus !== form.status) {
-        await logActivity({ action_type: 'status_changed', entity_type: 'booking', entity_id: id, entity_label: label, message: `${label} status changed from ${prevStatus} to ${form.status}` });
-      } else {
-        await logActivity({ action_type: 'updated', entity_type: 'booking', entity_id: id, entity_label: label, message: `${label} updated` });
-      }
+  const handleSave = async () => {
+    const missing = validateForm();
+    if (missing.length > 0) {
+      toast({
+        title: 'Missing required fields',
+        description: `Please fill in: ${missing.join(', ')}`,
+        variant: 'destructive',
+      });
+      return; // saving stays false — button remains active
     }
 
-    queryClient.invalidateQueries({ queryKey: ['bookings'] });
-    queryClient.invalidateQueries({ queryKey: ['booking', id] });
-    queryClient.invalidateQueries({ queryKey: ['activityLog'] });
-    setSaving(false);
-    navigate('/bookings');
+    setSaving(true);
+    try {
+      const totals = calcBookingTotals(form);
+      const data = {
+        ...form,
+        client_total: totals.clientTotal,
+        vendor_total: totals.vendorTotal,
+        profit: totals.profit,
+      };
+
+      if (isNew) {
+        const confNum = await getNextBookingNumber();
+        data.confirmation_number = confNum;
+        const created = await base44.entities.Booking.create(data);
+        await logActivity({ action_type: 'created', entity_type: 'booking', entity_id: created.id, entity_label: formatConfNumber(confNum), message: `Booking ${formatConfNumber(confNum)} created` });
+      } else {
+        const prevStatus = existing?.[0]?.status;
+        const { id: _id, created_date, updated_date, created_by, ...updateData } = data;
+        await base44.entities.Booking.update(id, updateData);
+        const label = formatConfNumber(form.confirmation_number);
+        if (prevStatus && prevStatus !== form.status) {
+          await logActivity({ action_type: 'status_changed', entity_type: 'booking', entity_id: id, entity_label: label, message: `${label} status changed from ${prevStatus} to ${form.status}` });
+        } else {
+          await logActivity({ action_type: 'updated', entity_type: 'booking', entity_id: id, entity_label: label, message: `${label} updated` });
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      queryClient.invalidateQueries({ queryKey: ['activityLog'] });
+      navigate('/bookings');
+    } catch (err) {
+      toast({
+        title: 'Save failed',
+        description: err?.message || 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDuplicate = async () => {
